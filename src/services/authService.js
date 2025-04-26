@@ -1,15 +1,12 @@
 import axios from 'axios';
+import api from './api';
 
-// Define la URL base de tu API backend
-// Asegúrate que el puerto coincida con el de tu backend (5000 por defecto)
-// En producción, esta sería la URL de tu backend desplegado.
-const API_URL = 'http://localhost:5000/api/users';
 
 // Función para registrar un usuario
 const register = async (username, email, password) => {
     try {
         // Hacemos la petición POST al endpoint de registro
-        const response = await axios.post(`${API_URL}/register`, {
+        const response = await api.post(`/users/register`, {
             username,
             email,
             password,
@@ -30,7 +27,7 @@ const register = async (username, email, password) => {
 const login = async (email, password) => {
     try {
         // Hacemos la petición POST al endpoint de login
-        const response = await axios.post(`${API_URL}/login`, {
+        const response = await api.post(`/users/login`, {
             email,
             password,
         });
