@@ -522,6 +522,7 @@ function HomePage() {
           onFolderClick={handleFolderClick}
           onDeleteClick={openConfirmModal}
           onEditClick={openEditModal}
+          user={user}
         />
         {/* Mensaje específico si solo subcarpetas está vacío pero hay archivos (y no estamos en raíz) */}
         {/* Mensaje si la carpeta está TOTALMENTE vacía */}
@@ -549,6 +550,7 @@ function HomePage() {
             isLoading={isLoadingFiles}
             onDeleteClick={openConfirmModal}
             onEditClick={openEditModal}
+            user={user}
           />
           {/* Mensaje si SOLO archivos está vacío pero hay carpetas */}
           {showEmptyFilesMessage && (
