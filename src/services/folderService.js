@@ -42,10 +42,26 @@ const createFolder = async (name, parentFolderId = null, assignedGroupId = null)
     }
 };
 
+// --- NUEVA Función para Obtener Detalles de Carpeta ---
+const getFolderDetails = async (folderId) => {
+    if (!folderId) {
+         // No tiene sentido llamar sin ID, podría devolver null o lanzar error
+         return null;
+     }
+    try {
+        const response = await api.get(`/folders/${folderId}`);
+        return response.data; // Devuelve el objeto de la carpeta
+    } catch (error) {
+        console.error(`Error obteniendo detalles para carpeta ${folderId}:`, error);
+        throw error; // Re-lanza para que el componente lo maneje
+    }
+};
+
 // Exportamos las funciones del servicio
 const folderService = {
     listFolders,
     createFolder,
+    getFolderDetails,
     // ...
 };
 
