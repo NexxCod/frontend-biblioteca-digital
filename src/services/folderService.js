@@ -57,11 +57,46 @@ const getFolderDetails = async (folderId) => {
     }
 };
 
+// --- NUEVA Función para Eliminar Carpeta ---
+const deleteFolder = async (folderId) => {
+    if (!folderId) throw new Error("Se requiere folderId para eliminar carpeta.");
+    try {
+        // DELETE /api/folders/:id - Esperamos un status 204 No Content si tiene éxito
+        await api.delete(`/folders/${folderId}`);
+         // No devuelve nada en éxito (204)
+    } catch (error) {
+        console.error(`Error eliminando carpeta ${folderId}:`, error);
+         // El backend podría devolver 400 si la carpeta no está vacía, el interceptor lo pasará
+        throw error; // Re-lanza para que el componente lo maneje
+    }
+};
+
+// --- NUEVA Función para Actualizar Carpeta ---
+const updateFolder = async (folderId, updateData) => {
+    // updateData debe ser un objeto con los campos a cambiar, ej: { name: 'Nuevo Nombre', assignedGroupId: '...' }
+    if (!folderId) throw new Error("Se requiere folderId para actualizar carpeta.");
+    if (!updateData || Object.keys(updateData).length === 0) {
+         // Evitar llamadas vacías
+         console.warn("updateFolder llamado sin datos para actualizar.");
+         return null; // O podrías devolver la carpeta sin cambios si la tuvieras
+     }
+    try {
+        // PUT /api/folders/:id
+        const response = await api.put(`/folders/${folderId}`, updateData);
+        return response.data; // Devuelve la carpeta actualizada
+    } catch (error) {
+        console.error(`Error actualizando carpeta ${folderId}:`, error);
+        throw error; // Re-lanza para que el componente lo maneje
+    }
+};
+
 // Exportamos las funciones del servicio
 const folderService = {
     listFolders,
     createFolder,
     getFolderDetails,
+    deleteFolder,
+    updateFolder,
     // ...
 };
 

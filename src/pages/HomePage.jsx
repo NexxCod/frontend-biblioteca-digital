@@ -52,6 +52,12 @@ function HomePage() {
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [addLinkError, setAddLinkError] = useState("");
 
+  // --- NUEVOS ESTADOS para Modal de Confirmación de Eliminación ---
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null); // { _id: ..., name: ..., type: 'file' | 'folder' }
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
   // --- Función para Cargar Contenido (useCallback) ---
   const loadFolderContent = useCallback(
     async (folderId) => {
@@ -132,6 +138,54 @@ function HomePage() {
     // loadFolderContent (definida con useCallback), isAuthLoading y user son necesarias
     // Añadimos currentFolder porque la condición if() ahora depende directamente de él.
   }, [loadFolderContent, isAuthLoading, user, currentFolder]);
+
+  // --- NUEVAS FUNCIONES para el flujo de eliminación ---
+  const openConfirmModal = (item, type) => {
+    console.log("Abriendo confirmación para eliminar:", type, item);
+    setItemToDelete({ ...item, type }); // Guardamos el item y su tipo ('file' o 'folder')
+    setDeleteError(''); // Limpiar error previo
+    setIsConfirmModalOpen(true);
+};
+
+const closeConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+    // Es buena idea resetearlos al cerrar por si acaso
+    setTimeout(() => { // Pequeño delay para que no se vea el cambio antes de cerrar
+        setItemToDelete(null);
+        setIsDeleting(false);
+        setDeleteError('');
+    }, 300); // Ajusta el tiempo si es necesario
+};
+
+const handleDeleteItem = async () => {
+    if (!itemToDelete) return;
+
+    setIsDeleting(true);
+    setDeleteError('');
+
+    try {
+        if (itemToDelete.type === 'file') {
+            console.log("Intentando eliminar archivo:", itemToDelete._id);
+            await fileService.deleteFile(itemToDelete._id);
+        } else if (itemToDelete.type === 'folder') {
+            console.log("Intentando eliminar carpeta:", itemToDelete._id);
+            await folderService.deleteFolder(itemToDelete._id);
+        }
+        console.log("Eliminación exitosa");
+        closeConfirmModal();
+        // Refrescar la vista actual después de eliminar
+        loadFolderContent(currentFolder?._id); // Llama con el ID actual
+    } catch (error) {
+        console.error("Error al eliminar:", error);
+         // Mostrar el mensaje específico del backend si existe (ej: carpeta no vacía)
+        setDeleteError(error?.response?.data?.message || error?.message || 'Error al eliminar el elemento.');
+        // No cerramos el modal en caso de error para que el usuario vea el mensaje
+    } finally {
+        setIsDeleting(false);
+    }
+};
+// ---------------------------------------------------------
+
 
   // --- Handlers Navegación ---
   // Estos simplemente llaman a loadFolderContent, que ahora está memoizada correctamente (esperemos)
@@ -278,6 +332,8 @@ const handleAddLinkSubmit = async (e) => {
     }
 };
 
+
+
   // --- Determinar qué grupos mostrar en los desplegables ---
   const groupsToShow = user?.role === "admin" ? availableGroups : user?.groups;
 
@@ -330,6 +386,7 @@ const handleAddLinkSubmit = async (e) => {
           folders={subfolders}
           isLoading={isLoadingFolders}
           onFolderClick={handleFolderClick}
+          onDeleteClick={openConfirmModal}
         />
         {/* Mensaje específico si solo subcarpetas está vacío pero hay archivos (y no estamos en raíz) */}
         {/* Mensaje si la carpeta está TOTALMENTE vacía */}
@@ -353,6 +410,7 @@ const handleAddLinkSubmit = async (e) => {
                        <FileGrid
                            files={files}
                            isLoading={isLoadingFiles}
+                           onDeleteClick={openConfirmModal} // Pasar la función de eliminar
                        />
                        {/* Mensaje si SOLO archivos está vacío pero hay carpetas */}
                        {showEmptyFilesMessage && (
@@ -426,6 +484,38 @@ const handleAddLinkSubmit = async (e) => {
           error={addLinkError}
         />
       </Modal>
+      {/* --- NUEVO Modal de Confirmación de Eliminación --- */}
+      <Modal isOpen={isConfirmModalOpen} onClose={closeConfirmModal} title="Confirmar Eliminación">
+                <div className="text-center">
+                    <p className="mb-4">
+                        ¿Estás seguro de que quieres eliminar{' '}
+                        <strong>"{itemToDelete?.name || itemToDelete?.filename}"</strong>?
+                    </p>
+                     {/* Mostrar error si existe */}
+                     {deleteError && (
+                         <p className="text-red-500 text-sm mb-3 bg-red-50 p-2 rounded">{deleteError}</p>
+                     )}
+                    <div className="flex justify-center gap-4">
+                        <button
+                            type="button"
+                            onClick={closeConfirmModal}
+                            disabled={isDeleting}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 focus:outline-none"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDeleteItem}
+                            disabled={isDeleting}
+                             className={`px-4 py-2 text-white bg-red-600 rounded hover:bg-red-800 focus:outline-none ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+            {/* ----------------------------------------------------- */}
     </div>
   );
 }

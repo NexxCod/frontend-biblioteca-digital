@@ -59,8 +59,18 @@ const addVideoLink = async (payload) => {
     }
 };
 
-// Podríamos añadir aquí funciones para uploadFile, addVideoLink, updateFile, deleteFile
-// usando la instancia 'api'
+// --- NUEVA Función para Eliminar Archivo ---
+const deleteFile = async (fileId) => {
+    if (!fileId) throw new Error("Se requiere fileId para eliminar archivo.");
+    try {
+        // DELETE /api/files/:id - Esperamos un status 204 No Content si tiene éxito
+        await api.delete(`/files/${fileId}`);
+        // No devuelve nada en éxito (204)
+    } catch (error) {
+        console.error(`Error eliminando archivo ${fileId}:`, error);
+        throw error; // Re-lanza para que el componente lo maneje
+    }
+};
 
 
 
@@ -68,6 +78,7 @@ const fileService = {
     listFiles,
     uploadFile, 
     addVideoLink,
+    deleteFile,
 };
 
 export default fileService;
