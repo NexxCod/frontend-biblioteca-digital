@@ -11,6 +11,7 @@ import FileGrid from "../components/FileGrid";
 import CreateFolderForm from "../components/CreateFolderForm";
 import UploadFileForm from "../components/UploadFileForm";
 import AddLinkForm from "../components/AddLinkForm";
+import EditFileForm from "../components/EditFileForm";
 
 // Asegúrate que HomeHeader tiene acceso a los iconos necesarios
 
@@ -56,47 +57,59 @@ function HomePage() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null); // { _id: ..., name: ..., type: 'file' | 'folder' }
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
+  const [deleteError, setDeleteError] = useState("");
+
+  // --- ESTADOS para Modal de Edición ---
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState(null); // { _id: ..., name: ..., type: 'file' | 'folder', ...otros datos }
+  // Estado para manejar los datos del formulario de edición
+  const [editFormData, setEditFormData] = useState({});
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editError, setEditError] = useState("");
+  // ----------------------------------------
 
   // --- Función para Cargar Contenido (useCallback) ---
-  const loadFolderContent = useCallback(
-    async (folderId) => {
-      console.log("Cargando contenido para folderId:", folderId);
-      let targetFolderObject = null;
-      setIsLoadingFolders(true); // Iniciar carga general
-       if (folderId) setIsLoadingFiles(true); else setFiles([]);
-      setError('');
+  const loadFolderContent = useCallback(async (folderId) => {
+    console.log("Cargando contenido para folderId:", folderId);
+    let targetFolderObject = null;
+    setIsLoadingFolders(true); // Iniciar carga general
+    if (folderId) setIsLoadingFiles(true);
+    else setFiles([]);
+    setError("");
 
-      try {
-          // Paso 1: Obtener el objeto de la carpeta actual (o null si es la raíz)
-          if (folderId) {
-              targetFolderObject = await folderService.getFolderDetails(folderId);
-          } else {
-              targetFolderObject = null; // Es la raíz
-          }
-          // Actualizar el estado de la carpeta actual AHORA que tenemos el objeto correcto
-          setCurrentFolder(targetFolderObject);
-
-           // Paso 2: Cargar subcarpetas y archivos para este folderId
-           const [subfolderResults, fileResults] = await Promise.all([
-              folderService.listFolders(folderId),
-              folderId ? fileService.listFiles(folderId) : Promise.resolve([])
-           ]);
-           setSubfolders(subfolderResults || []);
-           setFiles(fileResults || []);
-
-      } catch (err) {
-           console.error(`Error cargando contenido para folderId ${folderId}:`, err);
-           setError(err?.response?.data?.message || err?.message || 'Error al cargar contenido.');
-           setSubfolders([]);
-           setFiles([]);
-           // Considera qué hacer con currentFolder en caso de error.
-           // ¿Quizás volver a la raíz o al estado anterior? Por ahora lo dejamos.
-           // setCurrentFolder(null); // Opción: ir a raíz en error
-      } finally {
-           setIsLoadingFolders(false);
-           if (folderId) setIsLoadingFiles(false);
+    try {
+      // Paso 1: Obtener el objeto de la carpeta actual (o null si es la raíz)
+      if (folderId) {
+        targetFolderObject = await folderService.getFolderDetails(folderId);
+      } else {
+        targetFolderObject = null; // Es la raíz
       }
+      // Actualizar el estado de la carpeta actual AHORA que tenemos el objeto correcto
+      setCurrentFolder(targetFolderObject);
+
+      // Paso 2: Cargar subcarpetas y archivos para este folderId
+      const [subfolderResults, fileResults] = await Promise.all([
+        folderService.listFolders(folderId),
+        folderId ? fileService.listFiles(folderId) : Promise.resolve([]),
+      ]);
+      setSubfolders(subfolderResults || []);
+      setFiles(fileResults || []);
+    } catch (err) {
+      console.error(`Error cargando contenido para folderId ${folderId}:`, err);
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Error al cargar contenido."
+      );
+      setSubfolders([]);
+      setFiles([]);
+      // Considera qué hacer con currentFolder en caso de error.
+      // ¿Quizás volver a la raíz o al estado anterior? Por ahora lo dejamos.
+      // setCurrentFolder(null); // Opción: ir a raíz en error
+    } finally {
+      setIsLoadingFolders(false);
+      if (folderId) setIsLoadingFiles(false);
+    }
   }, []); // Ya no depende de currentFolder._id
 
   // --- Efecto para Cargar Grupos Disponibles (SI es Admin) ---
@@ -123,9 +136,12 @@ function HomePage() {
   useEffect(() => {
     // Log para depurar el estado al momento de ejecutar el efecto
     console.log(
-      "Effect inicial - isAuthLoading:", isAuthLoading,
-      "user:", !!user, // Loguear si el usuario existe (true/false)
-      "currentFolder:", currentFolder // Loguear el objeto currentFolder directamente
+      "Effect inicial - isAuthLoading:",
+      isAuthLoading,
+      "user:",
+      !!user, // Loguear si el usuario existe (true/false)
+      "currentFolder:",
+      currentFolder // Loguear el objeto currentFolder directamente
     );
 
     // --- CONDICIÓN SIMPLIFICADA ---
@@ -143,58 +159,156 @@ function HomePage() {
   const openConfirmModal = (item, type) => {
     console.log("Abriendo confirmación para eliminar:", type, item);
     setItemToDelete({ ...item, type }); // Guardamos el item y su tipo ('file' o 'folder')
-    setDeleteError(''); // Limpiar error previo
+    setDeleteError(""); // Limpiar error previo
     setIsConfirmModalOpen(true);
-};
+  };
 
-const closeConfirmModal = () => {
+  const closeConfirmModal = () => {
     setIsConfirmModalOpen(false);
     // Es buena idea resetearlos al cerrar por si acaso
-    setTimeout(() => { // Pequeño delay para que no se vea el cambio antes de cerrar
-        setItemToDelete(null);
-        setIsDeleting(false);
-        setDeleteError('');
+    setTimeout(() => {
+      // Pequeño delay para que no se vea el cambio antes de cerrar
+      setItemToDelete(null);
+      setIsDeleting(false);
+      setDeleteError("");
     }, 300); // Ajusta el tiempo si es necesario
-};
+  };
 
-const handleDeleteItem = async () => {
+  const handleDeleteItem = async () => {
     if (!itemToDelete) return;
 
     setIsDeleting(true);
-    setDeleteError('');
+    setDeleteError("");
 
     try {
-        if (itemToDelete.type === 'file') {
-            console.log("Intentando eliminar archivo:", itemToDelete._id);
-            await fileService.deleteFile(itemToDelete._id);
-        } else if (itemToDelete.type === 'folder') {
-            console.log("Intentando eliminar carpeta:", itemToDelete._id);
-            await folderService.deleteFolder(itemToDelete._id);
-        }
-        console.log("Eliminación exitosa");
-        closeConfirmModal();
-        // Refrescar la vista actual después de eliminar
-        loadFolderContent(currentFolder?._id); // Llama con el ID actual
+      if (itemToDelete.type === "file") {
+        console.log("Intentando eliminar archivo:", itemToDelete._id);
+        await fileService.deleteFile(itemToDelete._id);
+      } else if (itemToDelete.type === "folder") {
+        console.log("Intentando eliminar carpeta:", itemToDelete._id);
+        await folderService.deleteFolder(itemToDelete._id);
+      }
+      console.log("Eliminación exitosa");
+      closeConfirmModal();
+      // Refrescar la vista actual después de eliminar
+      loadFolderContent(currentFolder?._id); // Llama con el ID actual
     } catch (error) {
-        console.error("Error al eliminar:", error);
-         // Mostrar el mensaje específico del backend si existe (ej: carpeta no vacía)
-        setDeleteError(error?.response?.data?.message || error?.message || 'Error al eliminar el elemento.');
-        // No cerramos el modal en caso de error para que el usuario vea el mensaje
+      console.error("Error al eliminar:", error);
+      // Mostrar el mensaje específico del backend si existe (ej: carpeta no vacía)
+      setDeleteError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Error al eliminar el elemento."
+      );
+      // No cerramos el modal en caso de error para que el usuario vea el mensaje
     } finally {
-        setIsDeleting(false);
+      setIsDeleting(false);
     }
-};
-// ---------------------------------------------------------
+  };
 
+  // ---------------------------------------------------------
+  // --- NUEVAS FUNCIONES para el flujo de edición ---
+  const openEditModal = (item, type) => {
+    console.log("Abriendo modal para editar:", type, item);
+    setItemToEdit({ ...item, type }); // Guardar item y tipo
+    // Inicializar los datos del formulario con los valores actuales del item
+    if (type === "folder") {
+      setEditFormData({
+        name: item.name || "",
+        // Asegúrate que item.assignedGroup es el ID o null/undefined
+        assignedGroupId: item.assignedGroup?._id || "",
+      });
+    } else {
+      // 'file'
+      setEditFormData({
+        filename: item.filename || "",
+        description: item.description || "",
+        // Tags: necesita conversión de array de objetos a string separado por comas
+        tags: item.tags?.map((tag) => tag.name).join(", ") || "",
+        assignedGroupId: item.assignedGroup?._id || "",
+      });
+    }
+    setEditError(""); // Limpiar error previo
+    setIsEditModalOpen(true);
+  };
 
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setTimeout(() => {
+      setItemToEdit(null);
+      setEditFormData({});
+      setIsUpdating(false);
+      setEditError("");
+    }, 300);
+  };
+
+  // Handler genérico para cambios en el formulario de edición
+  // (Usado por EditFileForm, y podrías adaptarlo para EditFolderForm si no usas setters directos)
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleUpdateItem = async (e) => {
+    e.preventDefault(); // Prevenir submit por defecto del form
+    if (!itemToEdit) return;
+
+    setIsUpdating(true);
+    setEditError("");
+
+    try {
+      let updatedItem;
+      if (itemToEdit.type === "folder") {
+        // Datos a enviar para actualizar carpeta
+        const folderUpdateData = {
+          name: editFormData.name.trim(),
+          // Envía null si el valor es vacío '', de lo contrario envía el ID
+          assignedGroupId: editFormData.assignedGroupId || null,
+        };
+        console.log("Actualizando carpeta:", itemToEdit._id, folderUpdateData);
+        updatedItem = await folderService.updateFolder(
+          itemToEdit._id,
+          folderUpdateData
+        );
+      } else {
+        // 'file'
+        // Datos a enviar para actualizar archivo/enlace
+        const fileUpdateData = {
+          filename: editFormData.filename.trim(),
+          description: editFormData.description.trim(),
+          tags: editFormData.tags.trim(), // El backend espera un string de tags
+          assignedGroupId: editFormData.assignedGroupId || null,
+        };
+        console.log("Actualizando archivo:", itemToEdit._id, fileUpdateData);
+        updatedItem = await fileService.updateFile(
+          itemToEdit._id,
+          fileUpdateData
+        );
+      }
+      console.log("Actualización exitosa:", updatedItem);
+      closeEditModal();
+      // Refrescar la vista actual después de actualizar
+      loadFolderContent(currentFolder?._id);
+    } catch (error) {
+      console.error("Error al actualizar:", error);
+      setEditError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Error al guardar los cambios."
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  // ----------------------------------------------------
   // --- Handlers Navegación ---
   // Estos simplemente llaman a loadFolderContent, que ahora está memoizada correctamente (esperemos)
   const handleFolderClick = (folder) => loadFolderContent(folder._id);
   const handleBackClick = () => {
     // Obtenemos el ID del padre desde el estado currentFolder actual
-     const parentId = currentFolder?.parentFolder || null; // Si no hay parentFolder, es null (raíz)
-     loadFolderContent(parentId);
-};
+    const parentId = currentFolder?.parentFolder || null; // Si no hay parentFolder, es null (raíz)
+    loadFolderContent(parentId);
+  };
 
   // --- Handlers Modales (sin cambios en su lógica interna) ---
   const openCreateFolderModal = () => {
@@ -238,101 +352,111 @@ const handleDeleteItem = async () => {
     setUploadError("");
     setIsUploadModalOpen(true);
   };
-  const closeUploadModal = () =>  setIsUploadModalOpen(false);
+  const closeUploadModal = () => setIsUploadModalOpen(false);
 
   const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setUploadFile(file);
-            setHasFileSelected(true); // Archivo seleccionado
-            setUploadError(''); // Limpiar error si selecciona un archivo nuevo
-        } else {
-            setUploadFile(null);
-            setHasFileSelected(false); // No hay archivo
-        }
-    };
+    const file = e.target.files[0];
+    if (file) {
+      setUploadFile(file);
+      setHasFileSelected(true); // Archivo seleccionado
+      setUploadError(""); // Limpiar error si selecciona un archivo nuevo
+    } else {
+      setUploadFile(null);
+      setHasFileSelected(false); // No hay archivo
+    }
+  };
 
- const handleUploadSubmit = async (e) => {
-        e.preventDefault();
-        if (!uploadFile || !currentFolder) { // Necesitamos archivo y carpeta destino
-            setUploadError('Selecciona un archivo y asegúrate de estar dentro de una carpeta.');
-            return;
-        }
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault();
+    if (!uploadFile || !currentFolder) {
+      // Necesitamos archivo y carpeta destino
+      setUploadError(
+        "Selecciona un archivo y asegúrate de estar dentro de una carpeta."
+      );
+      return;
+    }
 
-        setIsUploading(true);
-        setUploadError('');
+    setIsUploading(true);
+    setUploadError("");
 
-         // Crear FormData
-         const formData = new FormData();
-         formData.append('file', uploadFile); // El archivo en sí [cite: 393]
-         formData.append('folderId', currentFolder._id); // ID de la carpeta actual [cite: 10, 37]
-         if (uploadDescription) formData.append('description', uploadDescription); // [cite: 10]
-         if (uploadTags) formData.append('tags', uploadTags); // [cite: 10]
-         if (uploadGroupId) formData.append('assignedGroupId', uploadGroupId); // [cite: 10, 13]
- 
-         try {
-             // Llamar al servicio
-             await fileService.uploadFile(formData); // [cite: 16]
-             closeUploadModal();
-             loadFolderContent(currentFolder._id, currentFolder); // Refrescar contenido
-         } catch (error) {
-             console.error("Error subiendo archivo:", error);
-             setUploadError(error?.response?.data?.message || error?.message || 'Error al subir el archivo.'); // [cite: 42]
-         } finally {
-             setIsUploading(false);
-         }
-     };
+    // Crear FormData
+    const formData = new FormData();
+    formData.append("file", uploadFile); // El archivo en sí [cite: 393]
+    formData.append("folderId", currentFolder._id); // ID de la carpeta actual [cite: 10, 37]
+    if (uploadDescription) formData.append("description", uploadDescription); // [cite: 10]
+    if (uploadTags) formData.append("tags", uploadTags); // [cite: 10]
+    if (uploadGroupId) formData.append("assignedGroupId", uploadGroupId); // [cite: 10, 13]
 
+    try {
+      // Llamar al servicio
+      await fileService.uploadFile(formData); // [cite: 16]
+      closeUploadModal();
+      loadFolderContent(currentFolder._id, currentFolder); // Refrescar contenido
+    } catch (error) {
+      console.error("Error subiendo archivo:", error);
+      setUploadError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Error al subir el archivo."
+      ); // [cite: 42]
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // --- Handlers Modales Add Link ---
   const openAddLinkModal = () => {
-    setLinkUrl('');
-    setLinkTitle('');
-    setLinkDescription('');
-    setLinkTags('');
+    setLinkUrl("");
+    setLinkTitle("");
+    setLinkDescription("");
+    setLinkTags("");
     // setLinkGroupId(currentFolder?.assignedGroup?._id || ''); // Ejemplo: Heredar grupo
-    setLinkGroupId(''); // Empezar con público
-    setAddLinkError('');
+    setLinkGroupId(""); // Empezar con público
+    setAddLinkError("");
     setIsAddLinkModalOpen(true);
-};
-const closeAddLinkModal = () => setIsAddLinkModalOpen(false);
+  };
+  const closeAddLinkModal = () => setIsAddLinkModalOpen(false);
 
-// IMPLEMENTACIÓN: Manejar submit de añadir enlace
-const handleAddLinkSubmit = async (e) => {
+  // IMPLEMENTACIÓN: Manejar submit de añadir enlace
+  const handleAddLinkSubmit = async (e) => {
     e.preventDefault();
     if (!linkUrl.trim() || !linkTitle.trim() || !currentFolder) {
-        setAddLinkError('La URL del video y el título son obligatorios. Asegúrate de estar en una carpeta.');
-        return;
+      setAddLinkError(
+        "La URL del video y el título son obligatorios. Asegúrate de estar en una carpeta."
+      );
+      return;
     }
     // Podrías añadir validación extra de URL aquí si quieres
 
     setIsAddingLink(true);
-    setAddLinkError('');
+    setAddLinkError("");
 
     // Crear payload JSON
     const payload = {
-        youtubeUrl: linkUrl.trim(), // [cite: 77]
-        title: linkTitle.trim(), // [cite: 77]
-        description: linkDescription.trim(), // [cite: 77]
-        tags: linkTags.trim(), // [cite: 77]
-        folderId: currentFolder._id, // [cite: 77]
-        assignedGroupId: linkGroupId || null // [cite: 77]
+      youtubeUrl: linkUrl.trim(), // [cite: 77]
+      title: linkTitle.trim(), // [cite: 77]
+      description: linkDescription.trim(), // [cite: 77]
+      tags: linkTags.trim(), // [cite: 77]
+      folderId: currentFolder._id, // [cite: 77]
+      assignedGroupId: linkGroupId || null, // [cite: 77]
     };
 
     try {
-        // Llamar al servicio
-        await fileService.addVideoLink(payload); // [cite: 17]
-        closeAddLinkModal();
-        loadFolderContent(currentFolder._id, currentFolder); // Refrescar contenido
+      // Llamar al servicio
+      await fileService.addVideoLink(payload); // [cite: 17]
+      closeAddLinkModal();
+      loadFolderContent(currentFolder._id, currentFolder); // Refrescar contenido
     } catch (error) {
-        console.error("Error añadiendo enlace:", error);
-        setAddLinkError(error?.response?.data?.message || error?.message || 'Error al añadir el enlace.'); // [cite: 101]
+      console.error("Error añadiendo enlace:", error);
+      setAddLinkError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Error al añadir el enlace."
+      ); // [cite: 101]
     } finally {
-        setIsAddingLink(false);
+      setIsAddingLink(false);
     }
-};
-
-
+  };
 
   // --- Determinar qué grupos mostrar en los desplegables ---
   const groupsToShow = user?.role === "admin" ? availableGroups : user?.groups;
@@ -342,8 +466,18 @@ const handleAddLinkSubmit = async (e) => {
   const canGoBack = currentFolder !== null;
   const folderSectionTitle = currentFolder ? "Subcarpetas" : "Carpetas";
   // Condición para mostrar mensaje de "vacío"
-  const showEmptyFolderMessage = !isLoadingFolders && !isLoadingFiles && !error && subfolders.length === 0 && files.length === 0; // Mensaje de carpeta totalmente vacía
-    const showEmptyFilesMessage = currentFolder && !isLoadingFiles && !error && files.length === 0 && subfolders.length > 0; // Mensaje si hay carpetas pero no archivos
+  const showEmptyFolderMessage =
+    !isLoadingFolders &&
+    !isLoadingFiles &&
+    !error &&
+    subfolders.length === 0 &&
+    files.length === 0; // Mensaje de carpeta totalmente vacía
+  const showEmptyFilesMessage =
+    currentFolder &&
+    !isLoadingFiles &&
+    !error &&
+    files.length === 0 &&
+    subfolders.length > 0; // Mensaje si hay carpetas pero no archivos
 
   if (isAuthLoading) {
     return (
@@ -387,39 +521,43 @@ const handleAddLinkSubmit = async (e) => {
           isLoading={isLoadingFolders}
           onFolderClick={handleFolderClick}
           onDeleteClick={openConfirmModal}
+          onEditClick={openEditModal}
         />
         {/* Mensaje específico si solo subcarpetas está vacío pero hay archivos (y no estamos en raíz) */}
         {/* Mensaje si la carpeta está TOTALMENTE vacía */}
         {showEmptyFolderMessage && (
-                        <p className="text-gray-500 text-sm italic pt-2 pl-2">
-                             {currentFolder ? '(Esta carpeta está vacía)' : '(No hay carpetas raíz creadas)'}
-                         </p>
-                   )}
+          <p className="text-gray-500 text-sm italic pt-2 pl-2">
+            {currentFolder
+              ? "(Esta carpeta está vacía)"
+              : "(No hay carpetas raíz creadas)"}
+          </p>
+        )}
       </div>
 
       {/* --- Sección de Archivos/Enlaces (CONDICIONAL) --- */}
       {currentFolder && (
-                   <div className="mt-8">
-                       {/* Título */}
-                       {(isLoadingFiles || files.length > 0) && !error && (
-                         <h2 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-1">
-                              Archivos y Enlaces
-                         </h2>
-                       )}
-                       {/* Grid */}
-                       <FileGrid
-                           files={files}
-                           isLoading={isLoadingFiles}
-                           onDeleteClick={openConfirmModal} // Pasar la función de eliminar
-                       />
-                       {/* Mensaje si SOLO archivos está vacío pero hay carpetas */}
-                       {showEmptyFilesMessage && (
-                           <p className="text-gray-500 text-sm italic pt-2 pl-2">
-                               (No hay archivos o enlaces)
-                           </p>
-                        )}
-                    </div>
-                )}
+        <div className="mt-8">
+          {/* Título */}
+          {(isLoadingFiles || files.length > 0) && !error && (
+            <h2 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-1">
+              Archivos y Enlaces
+            </h2>
+          )}
+          {/* Grid */}
+          <FileGrid
+            files={files}
+            isLoading={isLoadingFiles}
+            onDeleteClick={openConfirmModal}
+            onEditClick={openEditModal}
+          />
+          {/* Mensaje si SOLO archivos está vacío pero hay carpetas */}
+          {showEmptyFilesMessage && (
+            <p className="text-gray-500 text-sm italic pt-2 pl-2">
+              (No hay archivos o enlaces)
+            </p>
+          )}
+        </div>
+      )}
       {/* Fin de la sección condicional */}
 
       {/* --- Modales --- */}
@@ -485,37 +623,86 @@ const handleAddLinkSubmit = async (e) => {
         />
       </Modal>
       {/* --- NUEVO Modal de Confirmación de Eliminación --- */}
-      <Modal isOpen={isConfirmModalOpen} onClose={closeConfirmModal} title="Confirmar Eliminación">
-                <div className="text-center">
-                    <p className="mb-4">
-                        ¿Estás seguro de que quieres eliminar{' '}
-                        <strong>"{itemToDelete?.name || itemToDelete?.filename}"</strong>?
-                    </p>
-                     {/* Mostrar error si existe */}
-                     {deleteError && (
-                         <p className="text-red-500 text-sm mb-3 bg-red-50 p-2 rounded">{deleteError}</p>
-                     )}
-                    <div className="flex justify-center gap-4">
-                        <button
-                            type="button"
-                            onClick={closeConfirmModal}
-                            disabled={isDeleting}
-                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 focus:outline-none"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleDeleteItem}
-                            disabled={isDeleting}
-                             className={`px-4 py-2 text-white bg-red-600 rounded hover:bg-red-800 focus:outline-none ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            {isDeleting ? 'Eliminando...' : 'Eliminar'}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
-            {/* ----------------------------------------------------- */}
+      <Modal
+        isOpen={isConfirmModalOpen}
+        onClose={closeConfirmModal}
+        title="Confirmar Eliminación"
+      >
+        <div className="text-center">
+          <p className="mb-4">
+            ¿Estás seguro de que quieres eliminar{" "}
+            <strong>"{itemToDelete?.name || itemToDelete?.filename}"</strong>?
+          </p>
+          {/* Mostrar error si existe */}
+          {deleteError && (
+            <p className="text-red-500 text-sm mb-3 bg-red-50 p-2 rounded">
+              {deleteError}
+            </p>
+          )}
+          <div className="flex justify-center gap-4">
+            <button
+              type="button"
+              onClick={closeConfirmModal}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 focus:outline-none"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteItem}
+              disabled={isDeleting}
+              className={`px-4 py-2 text-white bg-red-600 rounded hover:bg-red-800 focus:outline-none ${
+                isDeleting ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        title={`Editar ${
+          itemToEdit?.type === "folder" ? "Carpeta" : "Archivo/Enlace"
+        }`}
+      >
+        {/* Renderizar formulario condicionalmente */}
+        {itemToEdit?.type === "folder" && (
+          <CreateFolderForm // Reutilizamos CreateFolderForm
+            // Pasamos props para que funcione como edición
+            folderName={editFormData.name}
+            setFolderName={(value) =>
+              setEditFormData((prev) => ({ ...prev, name: value }))
+            }
+            groupId={editFormData.assignedGroupId}
+            setGroupId={(value) =>
+              setEditFormData((prev) => ({ ...prev, assignedGroupId: value }))
+            }
+            groupsToShow={groupsToShow}
+            onSubmit={handleUpdateItem} // Usar el handler de update
+            onCancel={closeEditModal}
+            isLoading={isUpdating}
+            error={editError}
+            // Cambiar texto del botón y autofocus
+            submitButtonText="Guardar Cambios"
+            isEditing={true} // Prop opcional para que el form se adapte
+          />
+        )}
+        {itemToEdit?.type === "file" && (
+          <EditFileForm
+            formData={editFormData}
+            setFormData={setEditFormData} // Pasar el setter genérico o el handler
+            groupsToShow={groupsToShow}
+            onSubmit={handleUpdateItem}
+            onCancel={closeEditModal}
+            isLoading={isUpdating}
+            error={editError}
+          />
+        )}
+      </Modal>
+      {/* ----------------------------------------------------- */}
     </div>
   );
 }

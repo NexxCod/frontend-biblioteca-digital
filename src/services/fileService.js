@@ -72,6 +72,24 @@ const deleteFile = async (fileId) => {
     }
 };
 
+// --- NUEVA Función para Actualizar Archivo/Enlace ---
+const updateFile = async (fileId, updateData) => {
+    // updateData: { filename: '...', description: '...', tags: '...', assignedGroupId: '...' }
+    if (!fileId) throw new Error("Se requiere fileId para actualizar archivo/enlace.");
+     if (!updateData || Object.keys(updateData).length === 0) {
+         console.warn("updateFile llamado sin datos para actualizar.");
+         return null;
+     }
+    try {
+         // PUT /api/files/:id
+        const response = await api.put(`/files/${fileId}`, updateData);
+        return response.data; // Devuelve el archivo/enlace actualizado
+    } catch (error) {
+        console.error(`Error actualizando archivo/enlace ${fileId}:`, error);
+        throw error; // Re-lanza para que el componente lo maneje
+    }
+};
+
 
 
 const fileService = {
@@ -79,6 +97,7 @@ const fileService = {
     uploadFile, 
     addVideoLink,
     deleteFile,
+    updateFile,
 };
 
 export default fileService;

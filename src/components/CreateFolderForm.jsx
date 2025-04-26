@@ -10,7 +10,9 @@ function CreateFolderForm({
     onSubmit, // Función a llamar al hacer submit (handleCreateFolderSubmit de HomePage)
     onCancel, // Función para cerrar/cancelar (closeCreateFolderModal de HomePage)
     isLoading, // Booleano para estado de carga (isCreatingFolder de HomePage)
-    error // Mensaje de error (createFolderError de HomePage)
+    error, // Mensaje de error (createFolderError de HomePage)
+    submitButtonText = 'Crear Carpeta', // Valor por defecto
+    isEditing = false // Valor por defecto
 }) {
     return (
         <form onSubmit={onSubmit}>
@@ -26,7 +28,7 @@ function CreateFolderForm({
                     onChange={(e) => setFolderName(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     required
-                    autoFocus
+                    autoFocus={!isEditing}
                 />
             </div>
             {/* Selector de Grupo */}
@@ -65,7 +67,7 @@ function CreateFolderForm({
                     disabled={isLoading}
                     className={`px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-800 focus:outline-none ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                    {isLoading ? 'Creando...' : 'Crear Carpeta'}
+                    {isLoading ? (isEditing ? 'Guardando...' : 'Creando...') : submitButtonText}
                 </button>
             </div>
         </form>

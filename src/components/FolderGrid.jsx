@@ -2,7 +2,7 @@ import React from 'react';
 import FolderItem from './FolderItem';
 
 // Ya no necesita showEmptyMessage
-function FolderGrid({ folders, isLoading, onFolderClick, onDeleteClick }) {
+function FolderGrid({ folders, isLoading, onFolderClick, onDeleteClick, onEditClick }) {
   // Si está cargando, muestra el mensaje de carga
   if (isLoading) {
     return <p className="text-gray-500">Cargando carpetas...</p>;
@@ -22,6 +22,7 @@ function FolderGrid({ folders, isLoading, onFolderClick, onDeleteClick }) {
           folder={folder}
           onFolderClick={onFolderClick}
           onDeleteClick={onDeleteClick}
+          onEditClick={onEditClick}
         />
       ))}
     </div>

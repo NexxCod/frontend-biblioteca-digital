@@ -2,7 +2,7 @@ import React from 'react';
 import FileItem from './FileItem'; // Importa el componente de ítem
 
 // Recibe las props necesarias desde HomePage
-function FileGrid({ files, isLoading, showEmptyMessage, onDeleteClick }) {
+function FileGrid({ files, isLoading, showEmptyMessage, onDeleteClick, onEditClick }) {
   return (
     <div>
       {isLoading && (
@@ -15,7 +15,8 @@ function FileGrid({ files, isLoading, showEmptyMessage, onDeleteClick }) {
               <FileItem
                 key={file._id}
                 file={file}
-                onDeleteClick={onDeleteClick} // Pasa la función de eliminar al ítem
+                onDeleteClick={onDeleteClick}
+                onEditClick={onEditClick} 
               />
             ))
            // Mostrar mensaje "(Vacío)" solo si showEmptyMessage es true
