@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import { Tooltip } from "react-tooltip";
 
@@ -89,6 +89,10 @@ const formatBytes = (bytes, decimals = 2) => {
 }
 
 function FileItem({ file, onDeleteClick, onEditClick, user }) {
+
+  const [isDownloading, setIsDownloading] = useState(false); // Estado para indicar descarga
+  const [downloadError, setDownloadError] = useState('');   // Estado para errores de descarga
+
   // --- Lógica de Permisos ---
   const isAdmin = user?.role === "admin";
   const isOwner = user && file.uploadedBy && file.uploadedBy._id === user._id;
@@ -128,6 +132,54 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
 
   // Genera un ID único para el tooltip de este archivo
   const tooltipId = `file-info-${file._id}`;
+
+    // --- NUEVA FUNCIÓN PARA MANEJAR LA DESCARGA ---
+    const handleDownloadClick = async (e) => {
+      e.preventDefault(); // Prevenir la navegación normal del enlace
+      setIsDownloading(true); // Mostrar indicador de carga (opcional)
+      setDownloadError('');   // Limpiar error previo
+
+      // URL original de Cloudinary (no necesitamos ?fl_attachment=true aquí)
+      const fileUrl = file.secureUrl;
+      // Nombre de archivo saneado desde la BD
+      const filename = file.filename;
+
+      try {
+          // 1. Fetch del archivo como blob
+          const response = await fetch(fileUrl);
+
+          if (!response.ok) {
+              throw new Error(`Error al descargar: ${response.status} ${response.statusText}`);
+          }
+
+          const blob = await response.blob();
+
+          // 2. Crear URL local temporal para el blob
+          const tempUrl = window.URL.createObjectURL(blob);
+
+          // 3. Crear enlace 'a' temporal en memoria
+          const tempLink = document.createElement('a');
+          tempLink.style.display = 'none'; // Ocultarlo
+          tempLink.href = tempUrl;
+          tempLink.setAttribute('download', filename); // ¡Nombre de archivo correcto!
+
+          // 4. Añadir al DOM y simular clic
+          document.body.appendChild(tempLink);
+          tempLink.click();
+
+          // 5. Limpieza
+          document.body.removeChild(tempLink);
+          window.URL.revokeObjectURL(tempUrl);
+
+      } catch (error) {
+          console.error("Error en la descarga JS:", error);
+          setDownloadError('No se pudo descargar el archivo.'); // Mostrar error al usuario
+      } finally {
+          setIsDownloading(false); // Ocultar indicador de carga
+      }
+  };
+  // --- FIN NUEVA FUNCIÓN ---
+
   return (
     <div
       className="relative bg-white p-3 sm:p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-200 ease-in-out border border-gray-200 text-center flex flex-col justify-between"
@@ -180,16 +232,21 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
         <p className="mt-2 text-xs sm:text-sm font-medium text-gray-700 break-words">
           {file.filename}
         </p>
+        {/* Mostrar error de descarga si existe */}
+        {downloadError && <p className="text-red-500 text-xs mt-1">{downloadError}</p>}
       </div>
       {/* Enlace/Botón para abrir */}
+      
       <a
-        href={file.secureUrl}
-        target="_blank"
+        href={file.secureUrl} // URL de descarga directa
+        // target="_blank"
         rel="noopener noreferrer"
-        className="mt-2 text-xs text-blue-500 hover:underline block"
-        onClick={(e) => e.stopPropagation()} // Evita que el clic en el enlace dispare el onClick del div (si lo tuviera)
+        download={file.filename}
+        className="mt-2 text-xs text-blue-500 hover:underline block cursor-pointer"
+        // onClick={(e) => e.stopPropagation()} 
+        onClick={handleDownloadClick}
       >
-        {file.fileType === "video_link" ? "Ver Video" : "Abrir/Descargar"}
+        {isDownloading ? 'Descargando...' : (file.fileType === "video_link" || file.fileType === 'generic_link' ? "Abrir Enlace" : "Abrir/Descargar")}
       </a>
       {/* --- Componente Tooltip --- */}
       {/* Recuerda importar 'react-tooltip/dist/react-tooltip.css' globalmente */}
