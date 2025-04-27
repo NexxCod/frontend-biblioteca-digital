@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import 'react-tooltip/dist/react-tooltip.css';
 
 /* Clase para asegurar que el tooltip esté encima de otros elementos */
 .tooltip-on-top {

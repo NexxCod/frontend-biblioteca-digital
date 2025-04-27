@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import folderService from "../services/folderService";
 import fileService from "../services/fileService";
 import groupService from "../services/groupService";
+import tagService from "../services/tagService";
 import Modal from "../components/Modal";
 import FolderGrid from "../components/FolderGrid";
 import FileGrid from "../components/FileGrid";
@@ -13,7 +14,13 @@ import UploadFileForm from "../components/UploadFileForm";
 import AddLinkForm from "../components/AddLinkForm";
 import EditFileForm from "../components/EditFileForm";
 
-// Asegúrate que HomeHeader tiene acceso a los iconos necesarios
+// --- Icono de Lupa (SearchIcon) ---
+const SearchIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+);
+// ------------------------------------
 
 function HomePage() {
   const { user, logout, isLoading: isAuthLoading } = useAuth();
@@ -26,6 +33,15 @@ function HomePage() {
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [error, setError] = useState("");
   const [availableGroups, setAvailableGroups] = useState([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterFileType, setFilterFileType] = useState(""); // Para el filtro por tipo
+  const [filterTags, setFilterTags] = useState([]); // Para el filtro por tags (guardaremos los IDs)
+  const [availableTags, setAvailableTags] = useState([]); // Para cargar las tags disponibles para filtrar
+  const [sortBy, setSortBy] = useState("createdAt"); // Criterio de ordenación por defecto
+  const [sortOrder, setSortOrder] = useState("desc"); // Dirección de ordenación por defecto
+
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Estados Modales
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
@@ -69,48 +85,85 @@ function HomePage() {
   // ----------------------------------------
 
   // --- Función para Cargar Contenido (useCallback) ---
-  const loadFolderContent = useCallback(async (folderId) => {
-    console.log("Cargando contenido para folderId:", folderId);
-    let targetFolderObject = null;
-    setIsLoadingFolders(true); // Iniciar carga general
-    if (folderId) setIsLoadingFiles(true);
-    else setFiles([]);
-    setError("");
-
-    try {
-      // Paso 1: Obtener el objeto de la carpeta actual (o null si es la raíz)
-      if (folderId) {
-        targetFolderObject = await folderService.getFolderDetails(folderId);
-      } else {
-        targetFolderObject = null; // Es la raíz
-      }
-      // Actualizar el estado de la carpeta actual AHORA que tenemos el objeto correcto
-      setCurrentFolder(targetFolderObject);
-
-      // Paso 2: Cargar subcarpetas y archivos para este folderId
-      const [subfolderResults, fileResults] = await Promise.all([
-        folderService.listFolders(folderId),
-        folderId ? fileService.listFiles(folderId) : Promise.resolve([]),
-      ]);
-      setSubfolders(subfolderResults || []);
-      setFiles(fileResults || []);
-    } catch (err) {
-      console.error(`Error cargando contenido para folderId ${folderId}:`, err);
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Error al cargar contenido."
+  const loadFolderContent = useCallback(
+    async (
+      folderId,
+      {
+        searchTerm = "",
+        fileType = "",
+        tags = [], // Espera un array de IDs de tags
+        sortBy = "createdAt",
+        sortOrder = "desc",
+      } = {}
+    ) => {
+      console.log(
+        "loadFolderContent llamado para folderId:",
+        folderId,
+        "con params:",
+        { searchTerm, fileType, tags, sortBy, sortOrder }
       );
-      setSubfolders([]);
-      setFiles([]);
-      // Considera qué hacer con currentFolder en caso de error.
-      // ¿Quizás volver a la raíz o al estado anterior? Por ahora lo dejamos.
-      // setCurrentFolder(null); // Opción: ir a raíz en error
-    } finally {
-      setIsLoadingFolders(false);
-      if (folderId) setIsLoadingFiles(false);
-    }
-  }, []); // Ya no depende de currentFolder._id
+
+      let targetFolderObject = null;
+      setIsLoadingFolders(true); // Iniciar carga general
+      if (folderId) setIsLoadingFiles(true);
+      else setFiles([]);
+      setError("");
+
+      try {
+        // Paso 1: Obtener el objeto de la carpeta actual (o null si es la raíz)
+        if (folderId) {
+          targetFolderObject = await folderService.getFolderDetails(folderId);
+        } else {
+          targetFolderObject = null; // Es la raíz
+        }
+        // Actualizar el estado de la carpeta actual AHORA que tenemos el objeto correcto
+        setCurrentFolder(targetFolderObject);
+
+        // Paso 2: Cargar subcarpetas y archivos para este folderId
+        const [subfolderResults, fileResults] = await Promise.all([
+          folderService.listFolders(folderId),
+          folderId
+            ? fileService.listFiles(folderId, {
+                search: searchTerm,
+                fileType: fileType,
+                tags: tags.join(","), // Pasamos los IDs de tags como string separado por comas
+                sortBy: sortBy,
+                sortOrder: sortOrder,
+              })
+            : Promise.resolve([]),
+        ]);
+
+        console.log("Resultados de fileService.listFiles:", fileResults);
+
+        setSubfolders(subfolderResults || []);
+        setFiles(fileResults || []);
+      } catch (err) {
+        console.error(
+          `Error cargando contenido para folderId ${folderId}:`,
+          err
+        );
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Error al cargar contenido."
+        );
+        setSubfolders([]);
+        setFiles([]);
+      } finally {
+        setIsLoadingFolders(false);
+        if (folderId) setIsLoadingFiles(false);
+      }
+    },
+    [
+      searchTerm,
+      filterFileType,
+      filterTags,
+      sortBy,
+      sortOrder,
+      fileService,
+      folderService,
+    ]
+  );
 
   // --- Efecto para Cargar Grupos Disponibles (SI es Admin) ---
   useEffect(() => {
@@ -135,25 +188,64 @@ function HomePage() {
   // --- Efecto Inicial: Cargar Carpetas Raíz ---
   useEffect(() => {
     // Log para depurar el estado al momento de ejecutar el efecto
-    console.log(
-      "Effect inicial - isAuthLoading:",
+    console.log("Effect principal disparado. Estado de dependencias:", {
       isAuthLoading,
-      "user:",
-      !!user, // Loguear si el usuario existe (true/false)
-      "currentFolder:",
-      currentFolder // Loguear el objeto currentFolder directamente
-    );
+      user: !!user,
+      currentFolder: currentFolder?._id,
+      searchTerm,
+      filterFileType,
+      filterTags,
+      sortBy,
+      sortOrder,
+    });
 
     // --- CONDICIÓN SIMPLIFICADA ---
     // Ejecutar si la autenticación terminó, hay un usuario, y estamos en la vista raíz (currentFolder es null)
-    if (!isAuthLoading && user && currentFolder === null) {
-      console.log("Effect inicial: Llamando loadFolderContent(null)");
-      loadFolderContent(null);
+    if (!isAuthLoading && user) {
+      console.log(
+        "Condición de Effect cumplida: Llamando loadFolderContent..."
+      );
+      loadFolderContent(currentFolder?._id, {
+        // <-- Pasar currentFolder?._id para cargar la carpeta actual o la raíz
+        searchTerm,
+        fileType: filterFileType,
+        tags: filterTags,
+        sortBy,
+        sortOrder,
+      });
+    } else {
+      console.log("Condición de Effect NO cumplida.");
     }
     // --- DEPENDENCIAS ---
     // loadFolderContent (definida con useCallback), isAuthLoading y user son necesarias
     // Añadimos currentFolder porque la condición if() ahora depende directamente de él.
-  }, [loadFolderContent, isAuthLoading, user, currentFolder]);
+  }, [
+    loadFolderContent,
+    isAuthLoading,
+    user,
+    searchTerm,
+    filterFileType,
+    filterTags,
+    sortBy,
+    sortOrder,
+  ]);
+
+  // --- Efecto para Cargar Tags Disponibles ---
+  useEffect(() => {
+    const fetchTags = async () => {
+      if (!user || isAuthLoading) return; // No cargar si no hay usuario o auth está cargando
+      try {
+        const tagsData = await tagService.listTags(); // Asumiendo que tienes un tagService.js con listTags
+        setAvailableTags(tagsData || []);
+      } catch (error) {
+        console.error("Error fetching available tags:", error);
+        // Decide cómo manejar el error (mostrar mensaje, etc.)
+      }
+    };
+
+    fetchTags();
+    // Dependencias: Vuelve a cargar tags si el usuario o el estado de carga de autenticación cambian
+  }, [user, isAuthLoading]); // Depende de user y isAuthLoading del contexto de auth
 
   // --- NUEVAS FUNCIONES para el flujo de eliminación ---
   const openConfirmModal = (item, type) => {
@@ -191,7 +283,13 @@ function HomePage() {
       console.log("Eliminación exitosa");
       closeConfirmModal();
       // Refrescar la vista actual después de eliminar
-      loadFolderContent(currentFolder?._id); // Llama con el ID actual
+      loadFolderContent(currentFolder?._id, {
+        searchTerm,
+        fileType: filterFileType,
+        tags: filterTags,
+        sortBy,
+        sortOrder,
+      }); // Llama con el ID actual
     } catch (error) {
       console.error("Error al eliminar:", error);
       // Mostrar el mensaje específico del backend si existe (ej: carpeta no vacía)
@@ -288,7 +386,13 @@ function HomePage() {
       console.log("Actualización exitosa:", updatedItem);
       closeEditModal();
       // Refrescar la vista actual después de actualizar
-      loadFolderContent(currentFolder?._id);
+      loadFolderContent(currentFolder?._id, {
+        searchTerm,
+        fileType: filterFileType,
+        tags: filterTags,
+        sortBy,
+        sortOrder,
+      });
     } catch (error) {
       console.error("Error al actualizar:", error);
       setEditError(
@@ -302,12 +406,41 @@ function HomePage() {
   };
   // ----------------------------------------------------
   // --- Handlers Navegación ---
-  // Estos simplemente llaman a loadFolderContent, que ahora está memoizada correctamente (esperemos)
-  const handleFolderClick = (folder) => loadFolderContent(folder._id);
+  const handleFolderClick = (folder) => {
+    // Al navegar a una subcarpeta, podrías querer resetear los filtros/búsqueda
+    setSearchTerm(""); // Resetear término de búsqueda
+    setFilterFileType(""); // Resetear filtro de tipo
+    setFilterTags([]); // Resetear filtro de tags
+    // Podrías mantener la ordenación o resetearla también
+    // setSortBy('createdAt');
+    // setSortOrder('desc');
+
+    loadFolderContent(folder._id, {
+      searchTerm: "", // Usar el estado *después* del reseteo, o pasar valores fijos si reseteas
+      fileType: "",
+      tags: [],
+      sortBy, // Usar el estado actual (si no lo reseteaste)
+      sortOrder, // Usar el estado actual (si no lo reseteaste)
+    });
+  };
   const handleBackClick = () => {
-    // Obtenemos el ID del padre desde el estado currentFolder actual
-    const parentId = currentFolder?.parentFolder || null; // Si no hay parentFolder, es null (raíz)
-    loadFolderContent(parentId);
+    const parentId = currentFolder?.parentFolder || null;
+
+    // Resetear filtros/búsqueda al volver (opcional)
+    setSearchTerm("");
+    setFilterFileType("");
+    setFilterTags([]);
+    // Podrías mantener la ordenación o resetearla también
+    // setSortBy('createdAt');
+    // setSortOrder('desc');
+
+    loadFolderContent(parentId, {
+      searchTerm: "", // Usar el estado *después* del reseteo
+      fileType: "",
+      tags: [],
+      sortBy, // Usar el estado actual (si no lo reseteaste)
+      sortOrder, // Usar el estado actual (si no lo reseteaste)
+    });
   };
 
   // --- Handlers Modales (sin cambios en su lógica interna) ---
@@ -461,6 +594,43 @@ function HomePage() {
   // --- Determinar qué grupos mostrar en los desplegables ---
   const groupsToShow = user?.role === "admin" ? availableGroups : user?.groups;
 
+  // --- Handlers para Búsqueda, Filtrado y Ordenación (NUEVO) ---
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    // Podrías añadir un debounce aquí si quieres
+    // Pero por ahora, llamaremos a loadFolderContent en el useEffect
+  };
+
+  const handleFileTypeFilterChange = (e) => {
+    setFilterFileType(e.target.value);
+    // La carga de contenido se disparará en el useEffect por el cambio de estado
+  };
+
+  const handleTagFilterChange = (e) => {
+    // Asumimos un selector múltiple que devuelve un array de IDs
+    // O si es un <select multiple>, e.target.value sería un array de strings (IDs)
+    const selectedOptions = Array.from(e.target.selectedOptions).map(
+      (option) => option.value
+    );
+    setFilterTags(selectedOptions);
+    // La carga se disparará en el useEffect
+  };
+
+  const handleSortByChange = (e) => {
+    setSortBy(e.target.value);
+    // La carga se disparará en el useEffect
+  };
+
+  const handleSortOrderChange = (e) => {
+    setSortOrder(e.target.value);
+    // La carga se disparará en el useEffect
+  };
+  // -----------------------------------------------------------
+  // --- NUEVO Handler para el Toggle del Panel de Filtros ---
+  const handleToggleFilterPanel = () => {
+    setIsFilterPanelOpen((prev) => !prev);
+  };
+
   // --- Variables para Renderizado (Con ajustes para UI Raíz) ---
   const mainTitle = currentFolder ? `${currentFolder.name}` : "Home";
   const canGoBack = currentFolder !== null;
@@ -508,6 +678,8 @@ function HomePage() {
         <p className="text-red-500 bg-red-100 p-3 rounded mb-4">{error}</p>
       )}
 
+      
+
       {/* --- Sección de Carpetas/Subcarpetas --- */}
       <div className="mb-8">
         {/* 1. Muestra Título SOLO si está cargando o si hay subcarpetas */}
@@ -536,14 +708,73 @@ function HomePage() {
       </div>
 
       {/* --- Sección de Archivos/Enlaces (CONDICIONAL) --- */}
-      {currentFolder && (
-        <div className="mt-8">
-          {/* Título */}
-          {(isLoadingFiles || files.length > 0) && !error && (
-            <h2 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-1">
-              Archivos y Enlaces
-            </h2>
-          )}
+      {currentFolder && ( // Mostrar la sección entera solo si estamos dentro de una carpeta
+    <div className="mt-8">
+        {/* Contenedor para el Título y el Botón Toggle */}
+        <div className="flex items-center justify-between mb-3 border-b pb-1"> {/* Usamos flex para alinear */}
+             {/* Título */}
+             {(isLoadingFiles || files.length > 0 || isFilterPanelOpen) && !error && ( // Mostrar título si hay archivos, cargando O si el panel está abierto
+                <h2 className="text-lg font-semibold text-gray-700"> {/* Eliminamos mb-3, pb-1 de aquí */}
+                    Archivos y Enlaces
+                </h2>
+             )}
+             {/* Botón Toggle de Lupa */}
+             {/* Mostrar la lupa SI estamos en una carpeta, independientemente de si hay archivos cargados */}
+             <button
+                onClick={handleToggleFilterPanel}
+                className="p-1 text-gray-500 hover:text-blue-600 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300" // Estilo de botón de icono
+                aria-expanded={isFilterPanelOpen}
+                aria-controls="filter-panel"
+                title={isFilterPanelOpen ? 'Ocultar Filtros' : 'Mostrar Filtros'} // Tooltip/Título
+             >
+                <SearchIcon /> {/* Usamos el icono de lupa */}
+             </button>
+        </div>
+
+
+         {/* Contenedor del Panel de Filtros (Visible condicionalmente) */}
+         {/* Este div se queda en su posición actual, arriba de FileGrid */}
+         {isFilterPanelOpen && (
+            <div
+                id="filter-panel"
+                className="mb-6 p-3 bg-gray-100 rounded-lg shadow-sm flex flex-wrap gap-3 items-center transition-all duration-300 ease-in-out"
+            >
+                {/* ... Controles de Búsqueda, Tipo, Tags, Ordenación ... */}
+                {/* Manten todo el contenido del panel que ajustamos antes aquí */}
+
+                   <div className="flex-1 min-w-[150px] max-w-[250px]">
+                       <label htmlFor="search" className="block text-xs font-medium text-gray-700 mb-1">Buscar:</label>
+                       <input type="text" id="search" value={searchTerm} onChange={handleSearchChange} placeholder="Nombre, descripción..." className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs" />
+                   </div>
+                   <div>
+                       <label htmlFor="filterFileType" className="block text-xs font-medium text-gray-700 mb-1">Tipo:</label>
+                       <select id="filterFileType" value={filterFileType} onChange={handleFileTypeFilterChange} className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-xs">
+                           <option value="">Todos</option>
+                           <option value="pdf">PDF</option><option value="word">Word</option><option value="excel">Excel</option><option value="pptx">PowerPoint</option><option value="image">Imagen</option><option value="video_link">Enlace Video</option><option value="generic_link">Enlace Genérico</option><option value="other">Otro</option>
+                       </select>
+                   </div>
+                    <div>
+                       <label htmlFor="filterTags" className="block text-xs font-medium text-gray-700 mb-1">Etiquetas:</label>
+                       <select id="filterTags" multiple value={filterTags} onChange={handleTagFilterChange} className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-xs h-auto min-h-[28px]">
+                           {availableTags.map(tag => (<option key={tag._id} value={tag._id}>{tag.name}</option>))}
+                       </select>
+                   </div>
+                   <div>
+                       <label htmlFor="sortBy" className="block text-xs font-medium text-gray-700 mb-1">Ordenar por:</label>
+                       <select id="sortBy" value={sortBy} onChange={handleSortByChange} className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-xs">
+                           <option value="createdAt">Fecha Creación</option><option value="filename">Nombre</option>
+                       </select>
+                   </div>
+                   <div>
+                        <label htmlFor="sortOrder" className="block text-xs font-medium text-gray-700 mb-1">Dir:</label>
+                       <select id="sortOrder" value={sortOrder} onChange={handleSortOrderChange} className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-xs">
+                           <option value="desc">Desc</option><option value="asc">Asc</option>
+                       </select>
+                   </div>
+
+
+            </div>
+        )}
           {/* Grid */}
           <FileGrid
             files={files}
