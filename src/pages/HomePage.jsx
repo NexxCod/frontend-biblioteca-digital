@@ -41,6 +41,8 @@ function HomePage() {
   const [sortBy, setSortBy] = useState("createdAt"); // Criterio de ordenación por defecto
   const [sortOrder, setSortOrder] = useState("desc"); // Dirección de ordenación por defecto
 
+  const [folderIdToLoad, setFolderIdToLoad] = useState(null);
+
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   // Estados Modales
@@ -104,55 +106,68 @@ function HomePage() {
         { searchTerm, fileType, tags, sortBy, sortOrder }
       );
 
-      let targetFolderObject = null;
-      setIsLoadingFolders(true); // Iniciar carga general
-      if (folderId) setIsLoadingFiles(true);
-      else setFiles([]);
+      setIsLoadingFolders(true);
+      setIsLoadingFiles(true); // Considerar mostrar un solo estado de carga principal si prefieres
       setError("");
+      setSubfolders([]); // Limpiar datos viejos inmediatamente
+      setFiles([]); // Limpiar datos viejos inmediatamente
+
+      let targetFolderObject = null;
+
 
       try {
         // Paso 1: Obtener el objeto de la carpeta actual (o null si es la raíz)
         if (folderId) {
           targetFolderObject = await folderService.getFolderDetails(folderId);
+          console.log('Detalles de carpeta obtenidos:', targetFolderObject);
         } else {
-          targetFolderObject = null; // Es la raíz
+           // Si es la raíz, no hay objeto de carpeta, simulamos uno básico o manejamos null
+           targetFolderObject = null; // La raíz no tiene objeto de carpeta en este modelo
+           console.log('Cargando carpeta raíz. No hay detalles de carpeta.');
         }
-        // Actualizar el estado de la carpeta actual AHORA que tenemos el objeto correcto
-        setCurrentFolder(targetFolderObject);
 
-        // Paso 2: Cargar subcarpetas y archivos para este folderId
+        // Paso 2: Cargar subcarpetas y archivos para este folderId EN PARALELO
         const [subfolderResults, fileResults] = await Promise.all([
           folderService.listFolders(folderId),
-          folderId
-            ? fileService.listFiles(folderId, {
-                search: searchTerm,
-                fileType: fileType,
-                tags: tags.join(","), // Pasamos los IDs de tags como string separado por comas
-                sortBy: sortBy,
-                sortOrder: sortOrder,
-              })
-            : Promise.resolve([]),
+          fileService.listFiles(folderId, { // listFiles ya maneja folderId null si tu backend lo permite para archivos raíz
+            search: searchTerm,
+            fileType: fileType,
+            tags: tags.join(","),
+            sortBy: sortBy,
+            sortOrder: sortOrder,
+          }).catch(err => { // Manejar errores específicos de listFiles si es necesario
+               console.error('Error listando archivos en loadFolderContent:', err);
+               // Puedes decidir propagar el error principal o manejarlo aquí
+               return []; // Devolver array vacío si falla solo listFiles
+          })
         ]);
 
-        console.log("Resultados de fileService.listFiles:", fileResults);
+        console.log("Resultados listFolders:", subfolderResults);
+        console.log("Resultados listFiles:", fileResults);
 
+
+        // Paso 3: Actualizar TODOS los estados relevantes SOLO después de que ambas peticiones terminen
+        setCurrentFolder(targetFolderObject); // Ahora actualizamos el objeto completo aquí
         setSubfolders(subfolderResults || []);
         setFiles(fileResults || []);
+
+
       } catch (err) {
-        console.error(
-          `Error cargando contenido para folderId ${folderId}:`,
-          err
-        );
+        console.error(`Error cargando contenido para folderId ${folderId}:`, err);
+        // Limpiar estados y mostrar error general
         setError(
           err?.response?.data?.message ||
             err?.message ||
             "Error al cargar contenido."
         );
+        setCurrentFolder(folderId ? { _id: folderId, name: 'Error al cargar', parentFolder: null } : null); // Intenta mantener algo de contexto si es un error
         setSubfolders([]);
         setFiles([]);
       } finally {
+        // Desactivar estados de carga al finalizar (éxito o error)
         setIsLoadingFolders(false);
-        if (folderId) setIsLoadingFiles(false);
+        setIsLoadingFiles(false);
+        console.log('loadFolderContent finalizado para folderId:', folderId);
       }
     },
     [
@@ -161,9 +176,10 @@ function HomePage() {
       filterTags,
       sortBy,
       sortOrder,
-      fileService,
-      folderService,
-    ]
+      // Dependencias externas que afectan la carga con los parámetros actuales
+       folderService, // Asegúrate de que estas dependencias de servicio sean estables o no cambien
+       fileService
+    ] // El useCallback depende de los parámetros de búsqueda/filtro y servicios
   );
 
   // --- Efecto para Cargar Grupos Disponibles (SI es Admin) ---
@@ -188,48 +204,43 @@ function HomePage() {
   // --- Efecto Inicial: Cargar Carpetas Raíz ---
   // --- Efecto Inicial: Cargar Carpetas Raíz ---
   useEffect(() => {
-    // Log para depurar el estado al momento de ejecutar el efecto
-    console.log("Effect principal disparado. Estado de dependencias:", {
-      isAuthLoading,
-      user: !!user,
-      currentFolder: currentFolder?._id,
-      searchTerm,
-      filterFileType,
-      filterTags,
-      sortBy,
-      sortOrder,
-    });
+    console.log("Effect principal disparado. Estado de folderIdToLoad:", folderIdToLoad, "user:", !!user, "isAuthLoading:", isAuthLoading);
 
-    // --- CONDICIÓN SIMPLIFICADA ---
-    // Ejecutar si la autenticación terminó, hay un usuario, y estamos en la vista raíz (currentFolder es null)
+    // Solo cargar si la autenticación terminó y hay un usuario
+    // Y si folderIdToLoad ha cambiado (incluyendo el inicio con null)
+    // La condición `folderIdToLoad === null` cubre la carga inicial de la raíz.
     if (!isAuthLoading && user) {
-      console.log(
-        "Condición de Effect cumplida: Llamando loadFolderContent..."
-      );
-      loadFolderContent(currentFolder?._id, {
-        // <-- Pasar currentFolder?._id para cargar la carpeta actual o la raíz
-        searchTerm,
-        fileType: filterFileType,
-        tags: filterTags,
-        sortBy,
-        sortOrder,
-      });
-    } else {
-      console.log("Condición de Effect NO cumplida.");
+       console.log('Condición de Effect cumplida. Llamando loadFolderContent...');
+       // Llamar a loadFolderContent con el folderId que el efecto indica que debe cargar
+       loadFolderContent(folderIdToLoad, {
+          searchTerm,
+          fileType: filterFileType,
+          tags: filterTags,
+          sortBy,
+          sortOrder,
+       });
+    } else if (!isAuthLoading && !user) {
+        // Si la autenticación terminó pero no hay usuario, puede que estés en login/register
+        // Asegurarse de que la UI refleje un estado vacío o de no autenticado
+        console.log('Usuario no autenticado después de cargar. Limpiando estados de contenido.');
+        setSubfolders([]);
+        setFiles([]);
+        setCurrentFolder(null); // Asegurarse de que la carpeta actual es null si no logueado
+        setFolderIdToLoad(null); // Resetear también el ID a cargar
+        setError(""); // Limpiar errores de carga si los había
     }
-    // --- DEPENDENCIAS ---
-    // loadFolderContent (definida con useCallback), isAuthLoading y user son necesarias
-    // Añadimos currentFolder porque la condición if() ahora depende directamente de él.
-  }, [
-    loadFolderContent,
-    isAuthLoading,
-    user,
+
+}, [
+    folderIdToLoad, // <-- Esta es la dependencia clave para disparar al navegar
     searchTerm,
     filterFileType,
     filterTags,
     sortBy,
     sortOrder,
-  ]);
+    isAuthLoading, // Necesario para cargar inicialmente después de la auth
+    user,          // Necesario para cargar inicialmente después de la auth
+    loadFolderContent // useCallback asegura que esta dependencia sea estable
+]);
 
   // --- Efecto para Cargar Tags Disponibles ---
   useEffect(() => {
@@ -415,6 +426,7 @@ function HomePage() {
     // Podrías mantener la ordenación o resetearla también
     // setSortBy('createdAt');
     // setSortOrder('desc');
+    setFolderIdToLoad(folder._id); 
 
     loadFolderContent(folder._id, {
       searchTerm: "", // Usar el estado *después* del reseteo, o pasar valores fijos si reseteas
@@ -434,6 +446,7 @@ function HomePage() {
     // Podrías mantener la ordenación o resetearla también
     // setSortBy('createdAt');
     // setSortOrder('desc');
+    setFolderIdToLoad(parentId);
 
     loadFolderContent(parentId, {
       searchTerm: "", // Usar el estado *después* del reseteo
@@ -696,7 +709,7 @@ function HomePage() {
         )}
         <FolderGrid
           folders={subfolders}
-          isLoading={isLoadingFolders}
+          //isLoading={isLoadingFolders}
           onFolderClick={handleFolderClick}
           onDeleteClick={openConfirmModal}
           onEditClick={openEditModal}
