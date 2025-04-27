@@ -632,7 +632,7 @@ function HomePage() {
   };
 
   // --- Variables para Renderizado (Con ajustes para UI Raíz) ---
-  const mainTitle = currentFolder ? `${currentFolder.name}` : "Home";
+  const mainTitle = currentFolder ? `${currentFolder.name}` : "Inicio";
   const canGoBack = currentFolder !== null;
   const folderSectionTitle = currentFolder ? "Subcarpetas" : "Carpetas";
   // Condición para mostrar mensaje de "vacío"
