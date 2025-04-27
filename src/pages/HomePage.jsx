@@ -58,6 +58,7 @@ function HomePage() {
   const [uploadGroupId, setUploadGroupId] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Estados Modales AddLink
   const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
@@ -483,6 +484,7 @@ function HomePage() {
     // setUploadGroupId(currentFolder?.assignedGroup?._id || ''); // Ejemplo: Heredar grupo
     setUploadGroupId(""); // Empezar con público
     setUploadError("");
+    setUploadProgress(0);
     setIsUploadModalOpen(true);
   };
   const closeUploadModal = () => setIsUploadModalOpen(false);
@@ -511,6 +513,7 @@ function HomePage() {
 
     setIsUploading(true);
     setUploadError("");
+    setUploadProgress(0);
 
     // Crear FormData
     const formData = new FormData();
@@ -522,7 +525,9 @@ function HomePage() {
 
     try {
       // Llamar al servicio
-      await fileService.uploadFile(formData); // [cite: 16]
+      await fileService.uploadFile(formData, (progress) => {
+        setUploadProgress(progress); 
+      });
       closeUploadModal();
       loadFolderContent(currentFolder._id, currentFolder); // Refrescar contenido
     } catch (error) {
@@ -531,7 +536,8 @@ function HomePage() {
         error?.response?.data?.message ||
           error?.message ||
           "Error al subir el archivo."
-      ); // [cite: 42]
+      ); 
+      setUploadProgress(0);
     } finally {
       setIsUploading(false);
     }
@@ -830,6 +836,7 @@ function HomePage() {
           isLoading={isUploading}
           error={uploadError}
           hasFileSelected={hasFileSelected}
+          uploadProgress={uploadProgress}
         />
       </Modal>
       <Modal

@@ -32,15 +32,23 @@ const listFiles = async (folderId, params = {}) => {
 
 // --- NUEVA Función para Subir Archivo ---
 // Recibe un objeto FormData
-const uploadFile = async (formData) => {
+const uploadFile = async (formData, onProgress) => {
     try {
         // Al enviar FormData, Axios establece automáticamente
         // Content-Type: multipart/form-data
         const response = await api.post('/files/upload', formData, {
-            // Opcional: Configuración para progreso de subida si se implementa
-            // onUploadProgress: progressEvent => { ... }
+            onUploadProgress: (progressEvent) => {
+                // Calcula el porcentaje completado
+                const percentCompleted = Math.round(
+                    (progressEvent.loaded * 100) / progressEvent.total
+                );
+                // Llama al callback si se proporcionó
+                if (onProgress) {
+                    onProgress(percentCompleted);
+                }
+            },
         });
-        return response.data; // Devuelve el registro del archivo creado
+        return response.data; // Devuelve los datos del archivo creado
     } catch (error) {
         console.error("Error subiendo archivo:", error);
         throw error;

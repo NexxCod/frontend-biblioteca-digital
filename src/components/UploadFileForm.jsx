@@ -9,8 +9,15 @@ function UploadFileForm({
     onFileChange, // Handler para el input file
     onSubmit, onCancel,
     isLoading, error,
-    hasFileSelected // Booleano para habilitar/deshabilitar submit
+    hasFileSelected, uploadProgress // Booleano para habilitar/deshabilitar submit
 }) {
+    // Determinar si mostrar la barra (ej: solo cuando está subiendo y el progreso es > 0 y < 100)
+     // La barra se mostrará desde que empieza la subida (isLoading=true) hasta que termina (isLoading=false).
+     // Podemos añadir condición de > 0 para que no aparezca hasta el primer reporte de progreso.
+     const showProgressBar = isLoading && uploadProgress > 0 && uploadProgress < 100;
+     // Mostrar 100% brevemente al final si quieres
+    const showCompleted = !isLoading && uploadProgress === 100;
+
     return (
         <form onSubmit={onSubmit}>
             {/* Input Archivo */}
@@ -19,6 +26,29 @@ function UploadFileForm({
                  <input type="file" id="fileUpload" onChange={onFileChange} required
                         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
             </div>
+
+        {/* --- BARRA DE PROGRESO DE SUBIDA (NUEVO) --- */}
+        {(showProgressBar || showCompleted) && (
+                <div className="mb-4 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 relative overflow-hidden"> {/* relative y overflow-hidden para texto centrado */}
+                     <div
+                         className="bg-green-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                         style={{ width: `${uploadProgress}%` }} // Controla el ancho
+                     ></div>
+                     {/* Opcional: Texto del porcentaje centrado */}
+                     {/*
+                     <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-800 font-bold">
+                        {uploadProgress}%
+                     </div>
+                     */}
+                </div>
+            )}
+            {/* --- FIN BARRA DE PROGRESO --- */}
+
+            {/* Mensaje de "Subiendo..." o "Subido!" */}
+            {isLoading && uploadProgress > 0 && <p className="text-sm text-center text-blue-600 mb-3">Subiendo: {uploadProgress}%</p>}
+             {showCompleted && <p className="text-sm text-center text-green-600 mb-3">Subida completa!</p>}
+
+
             {/* Descripción */}
              <div className="mb-4">
                 <label htmlFor="uploadDesc" className="block text-sm font-medium text-gray-700 mb-1">Descripción (Opcional):</label>
