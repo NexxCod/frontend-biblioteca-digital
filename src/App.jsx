@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
+import AdminPage from './pages/AdminPage';
 import ProtectedRoute from './components/ProtectedRoute'; // Importa el protector
 
 function App() {
@@ -28,6 +29,20 @@ function App() {
 
       {/* Ruta Catch-all (Opcional - para páginas no encontradas) */}
       <Route path="*" element={<div>Página no encontrada (404)</div>} />
+
+      {/* **NUEVA RUTA PROTEGIDA PARA ADMINISTRACIÓN** */}
+       {/* Esta ruta debería ser accesible solo para admins.
+           Puedes añadir una verificación de rol dentro de AdminPage
+           o crear un ProtectedRoute más específico (ej: AdminRoute) */}
+      <Route
+        path="/admin/*" // Usamos /* para rutas anidadas dentro de /admin
+        element={
+          <ProtectedRoute>
+             {/* Podrías pasar el usuario para verificación de rol interna */}
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
 
     </Routes>
   );

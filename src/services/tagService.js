@@ -19,16 +19,50 @@ const listTags = async () => {
     }
 };
 
-// Podrías añadir aquí otras funciones si tuvieras endpoints para crear, actualizar o eliminar tags
-// const createTag = async (tagName) => { ... }
-// const updateTag = async (tagId, newName) => { ... }
-// const deleteTag = async (tagId) => { ... }
+// --- NUEVO: Función para crear una nueva etiqueta ---
+const createTag = async (tagData) => {
+    // tagData debe ser un objeto { name: '...' }
+     if (!tagData || !tagData.name) throw new Error("Se requiere el nombre de la etiqueta.");
+   try {
+       const response = await api.post('/tags', tagData);
+       return response.data; // Devuelve la etiqueta creada
+   } catch (error) {
+       console.error("Error creando etiqueta:", error);
+       throw error;
+   }
+};
+
+// --- NUEVO: Función para actualizar una etiqueta ---
+// updateData debe ser un objeto { name: '...' }
+const updateTag = async (tagId, updateData) => {
+    if (!tagId || !updateData || !updateData.name) throw new Error("Se requiere tagId y el nuevo nombre.");
+   try {
+       const response = await api.put(`/tags/${tagId}`, updateData);
+       return response.data; // Devuelve la etiqueta actualizada
+   } catch (error) {
+       console.error(`Error actualizando etiqueta ${tagId}:`, error);
+       throw error;
+   }
+};
+
+// --- NUEVO: Función para eliminar una etiqueta ---
+const deleteTag = async (tagId) => {
+    if (!tagId) throw new Error("Se requiere tagId.");
+   try {
+       await api.delete(`/tags/${tagId}`);
+       return true; // Indica éxito (la API devuelve 204 No Content)
+   } catch (error) {
+       console.error(`Error eliminando etiqueta ${tagId}:`, error);
+       throw error;
+   }
+};
 
 
-// Exporta las funciones del servicio
 const tagService = {
-    listTags,
-    // Incluye aquí las otras funciones si las añades
+   listTags,
+   createTag, // Exportar nuevo servicio
+   updateTag, // Exportar nuevo servicio
+   deleteTag, // Exportar nuevo servicio
 };
 
 export default tagService;
