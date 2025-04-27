@@ -186,60 +186,6 @@ const handleLogoutClick = () => { logout(); setIsMenuOpen(false); };
                 </div>
             </div>
         </header>
-
-
-
-        // <div className="flex flex-wrap items-center mb-6 gap-y-4 gap-x-2">
-        //     {/* Izquierda: Título y Usuario */}
-        //     <div className="w-full sm:flex-grow">
-        //         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center">
-        //             {/* Botón Atrás (condicional) */}
-        //             {canGoBack && (
-        //                 <button onClick={handleBackClick} title="Volver" className="mr-3 p-1 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400">
-        //                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        //                         <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        //                     </svg>
-        //                 </button>
-        //             )}
-        //            {/* Podríamos truncar texto si es muy largo en móvil */}
-        //            <span className="truncate">Carpeta: {currentFolderName}</span>
-        //         </h1>
-        //         <p className="text-gray-600 text-sm mt-1">Usuario: {user?.username} ({user?.role})</p>
-        //     </div>
-
-        //     {/* Derecha: Botones de Acción */}
-        //     <div className="w-full sm:w-auto flex flex-wrap gap-2 justify-start sm:justify-end flex-shrink-0">
-        //         <button onClick={openCreateFolderModal} title="Crear Nueva Carpeta" className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 focus:outline-none text-sm inline-flex items-center">
-        //             <CreateFolderIcon /> Nueva Carpeta
-        //         </button>
-        //         {/* --- Renderizado Condicional para Botón Subir --- */}
-        //         {currentFolder && ( // Solo renderiza si currentFolder NO es null
-        //             <button
-        //                 onClick={openUploadModal}
-        //                 title="Subir Archivo"
-        //                 className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-700 focus:outline-none text-sm inline-flex items-center"
-        //                 // Ya no necesitamos disabled={!currentFolder} ni las clases condicionales para gris
-        //             >
-        //                 <UploadIcon /> Subir
-        //             </button>
-        //         )}
-
-        //         {/* --- Renderizado Condicional para Botón Enlace --- */}
-        //         {currentFolder && ( // Solo renderiza si currentFolder NO es null
-        //              <button
-        //                  onClick={openAddLinkModal}
-        //                  title="Añadir Enlace de Video"
-        //                  className="px-3 py-2 bg-purple-500 text-white rounded hover:bg-purple-700 focus:outline-none text-sm inline-flex items-center"
-        //                   // Ya no necesitamos disabled={!currentFolder} ni las clases condicionales para gris
-        //              >
-        //                  <LinkIcon /> Enlace
-        //              </button>
-        //         )}
-        //         <button onClick={logout} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-gray-700 focus:outline-none text-sm">
-        //             Cerrar Sesión
-        //         </button>
-        //     </div>
-        // </div>
     );
 }
 
