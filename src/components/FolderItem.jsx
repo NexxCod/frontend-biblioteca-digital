@@ -151,7 +151,7 @@ function FolderItem({
       {/* Puedes añadir clases para estilo: className='custom-tooltip-style' */}
       {/* Asegúrate de importar el CSS base de react-tooltip en tu App.jsx o index.js */}
       {/* import 'react-tooltip/dist/react-tooltip.css'; */}
-      <Tooltip id={tooltipId} />
+      <Tooltip id={tooltipId} className="tooltip-on-top" />
     </div>
   );
 }

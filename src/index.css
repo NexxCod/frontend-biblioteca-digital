@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+/* Clase para asegurar que el tooltip esté encima de otros elementos */
+.tooltip-on-top {
+    /* El z-index debe ser mayor que el de tu header (z-30 = 30) */
+    /* Usamos un valor alto para estar seguros */
+    z-index: 50 !important;
+    /* '!important' a veces es necesario para sobreescribir estilos por defecto */
+  }

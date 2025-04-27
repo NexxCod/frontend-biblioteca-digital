@@ -134,7 +134,7 @@ const handleLogoutClick = () => { logout(); setIsMenuOpen(false); };
                     <UserIcon />
                 </button>
                 {/* El componente Tooltip asociado */}
-                <Tooltip id={userTooltipId} />
+                <Tooltip id={userTooltipId} className="tooltip-on-top" />
                 {/* Botón Menú Desplegable (Tres Puntos) */}
                 <div className="relative"> {/* Necesario para posicionar el menú */}
                     <button

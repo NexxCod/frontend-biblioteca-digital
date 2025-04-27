@@ -193,7 +193,7 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
       </a>
       {/* --- Componente Tooltip --- */}
       {/* Recuerda importar 'react-tooltip/dist/react-tooltip.css' globalmente */}
-      <Tooltip id={tooltipId} />
+      <Tooltip id={tooltipId} className="tooltip-on-top" />
     </div>
   );
 }
