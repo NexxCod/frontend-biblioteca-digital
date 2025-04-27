@@ -1,4 +1,6 @@
 import React from "react";
+import { format } from "date-fns";
+import { Tooltip } from 'react-tooltip';
 
 // Importa o define FolderIcon aquí si lo moviste
 const FolderIcon = () => (
@@ -52,6 +54,23 @@ const PencilIcon = () => (
   </svg>
 );
 
+const InfoIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+);
+
 // Recibe 'folder' y 'onFolderClick' como props
 function FolderItem({
   folder,
@@ -62,18 +81,40 @@ function FolderItem({
 }) {
   // --- Lógica de Permisos ---
   const isAdmin = user?.role === "admin";
-  // Asegúrate que folder.createdBy exista y tenga _id antes de comparar
   const isOwner = user && folder.createdBy && folder.createdBy._id === user._id;
   const canModify = isAdmin || isOwner;
   // --------------------------
 
+  // --- Información para el Tooltip (formateada como HTML simple) ---
+  const infoHtml = `
+    <div>
+      <p><strong>Creado por:</strong> ${folder.createdBy?.username || 'Desconocido'}</p>
+      <p><strong>Fecha:</strong> ${folder.createdAt ? format(new Date(folder.createdAt), 'dd/MM/yyyy HH:mm') : 'N/A'}</p>
+    </div>
+  `;
+
+  // Genera un ID único para el tooltip de esta carpeta
+  const tooltipId = `folder-info-${folder._id}`;
+
   return (
     <div
-      className="relative bg-white p-3 sm:p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-200 ease-in-out cursor-pointer border border-gray-200 text-center"
+      className="relative bg-white p-3 pt-5 sm:p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-200 ease-in-out cursor-pointer border border-gray-200 text-center"
       onClick={() => onFolderClick(folder)} // Click principal para navegar
       title={folder.name}
     >
       <div className="absolute top-1 right-1 flex gap-1 z-10">
+         {/* --- Botón de Información con react-tooltip --- */}
+         <button
+            onClick={(e) => e.stopPropagation()} // Evita que se abra la carpeta
+            className="p-1 text-gray-400 hover:text-sky-600 rounded-full hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300"
+            data-tooltip-id={tooltipId} // Asigna el ID único
+            data-tooltip-html={infoHtml} // Pasa el contenido HTML
+            data-tooltip-place="top" // Posición del tooltip (puedes cambiarla)
+            aria-label={`Información sobre ${folder.name}`} // Para accesibilidad
+          >
+            <InfoIcon />
+         </button>
+         {/* --- Fin Botón de Información --- */}
         {/* Botón Editar */}
         {canModify && onEditClick && (
           <button
@@ -87,26 +128,30 @@ function FolderItem({
             <PencilIcon />
           </button>
         )}
-
         {/* Botón Eliminar (posición absoluta) */}
-        {canModify && onDeleteClick && ( // Mostrar solo si la función es pasada
-          <button
-            onClick={(e) => {
-              e.stopPropagation(); // IMPORTANTE: Evita que se dispare onFolderClick
-              onDeleteClick(folder, "folder"); // Llama a la función pasada desde HomePage, indicando el tipo
-            }}
-            className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300"
-            title="Eliminar Carpeta"
-          >
-            <TrashIcon />
-          </button>
-        )}
+        {canModify &&
+          onDeleteClick && ( // Mostrar solo si la función es pasada
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // IMPORTANTE: Evita que se dispare onFolderClick
+                onDeleteClick(folder, "folder"); // Llama a la función pasada desde HomePage, indicando el tipo
+              }}
+              className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300"
+              title="Eliminar Carpeta"
+            >
+              <TrashIcon />
+            </button>
+          )}
       </div>
       <FolderIcon />
       <p className="mt-2 text-xs sm:text-sm font-medium text-gray-700 break-words">
         {folder.name}
       </p>
-      {/* Podríamos añadir más detalles aquí si los pasamos */}
+      {/* --- Componente Tooltip (se renderiza aquí pero se posiciona globalmente) --- */}
+      {/* Puedes añadir clases para estilo: className='custom-tooltip-style' */}
+      {/* Asegúrate de importar el CSS base de react-tooltip en tu App.jsx o index.js */}
+      {/* import 'react-tooltip/dist/react-tooltip.css'; */}
+      <Tooltip id={tooltipId} />
     </div>
   );
 }

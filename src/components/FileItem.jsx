@@ -1,4 +1,6 @@
 import React from "react";
+import { format } from "date-fns";
+import { Tooltip } from "react-tooltip";
 
 // Importa o define FileIcon aquí si lo moviste
 const FileIcon = ({ fileType }) => {
@@ -60,23 +62,90 @@ const PencilIcon = () => (
   </svg>
 );
 
-// Recibe 'file' como prop
+const InfoIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-4 w-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
+  </svg>
+);
+
+const formatBytes = (bytes, decimals = 2) => {
+  if (!+bytes) return '0 Bytes'
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
+
 function FileItem({ file, onDeleteClick, onEditClick, user }) {
   // --- Lógica de Permisos ---
   const isAdmin = user?.role === "admin";
-  // Asegúrate que file.uploadedBy exista y tenga _id antes de comparar
-  // Nota: El modelo File usa 'uploadedBy', Folder usa 'createdBy'. ¡Verifica esto!
-  // Asumiendo que ambos tienen _id después de populate
   const isOwner = user && file.uploadedBy && file.uploadedBy._id === user._id;
   const canModify = isAdmin || isOwner;
   // --------------------------
+  // --- Información para el Tooltip (formateada como HTML simple) ---
+  const tagString =
+    file.tags?.length > 0
+      ? file.tags.map((tag) => tag.name).join(", ")
+      : "Ninguna";
 
+  let detailsHtml = `
+<div>
+  <p><strong>Tipo:</strong> ${file.fileType || "N/A"}</p>
+  <p><strong>Creado por:</strong> ${
+    file.uploadedBy?.username || "Desconocido"
+  }</p>
+  <p><strong>Fecha:</strong> ${
+    file.createdAt
+      ? format(new Date(file.createdAt), "dd/MM/yyyy HH:mm")
+      : "N/A"
+  }</p>
+  <p><strong>Descripción:</strong> ${file.description || "Ninguna"}</p>
+  <p><strong>Etiquetas:</strong> ${tagString}</p>
+`;
+
+  // Añadir tamaño solo si no es un enlace y el tamaño existe
+  if (
+    file.fileType !== "video_link" &&
+    file.size !== undefined &&
+    file.size !== null
+  ) {
+    detailsHtml += `<p><strong>Tamaño:</strong> ${formatBytes(file.size)}</p>`;
+  }
+
+  detailsHtml += `</div>`; // Cierra el div
+
+  // Genera un ID único para el tooltip de este archivo
+  const tooltipId = `file-info-${file._id}`;
   return (
     <div
       className="relative bg-white p-3 sm:p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-200 ease-in-out border border-gray-200 text-center flex flex-col justify-between"
       title={file.filename}
     >
       <div className="absolute top-1 right-1 flex gap-1 z-10">
+        {/* --- Botón de Información con react-tooltip --- */}
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="p-1 text-gray-400 hover:text-sky-600 rounded-full hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300"
+          data-tooltip-id={tooltipId} // Asigna el ID único
+          data-tooltip-html={detailsHtml} // Pasa el contenido HTML
+          data-tooltip-place="top" // Posición del tooltip
+          aria-label={`Información sobre ${file.filename}`} // Accesibilidad
+        >
+          <InfoIcon />
+        </button>
+        {/* --- Fin Botón de Información --- */}
         {/* Botón Editar */}
         {canModify && onEditClick && (
           <button
@@ -91,18 +160,19 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
           </button>
         )}
         {/* Botón Eliminar (posición absoluta) */}
-        {canModify && onDeleteClick && ( // Mostrar solo si la función es pasada
-          <button
-            onClick={(e) => {
-              e.stopPropagation(); // IMPORTANTE: Evita que se dispare el clic del div padre
-              onDeleteClick(file, "file"); // Llama a la función pasada desde HomePage, indicando el tipo
-            }}
-            className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300"
-            title="Eliminar Archivo"
-          >
-            <TrashIcon />
-          </button>
-        )}
+        {canModify &&
+          onDeleteClick && ( // Mostrar solo si la función es pasada
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // IMPORTANTE: Evita que se dispare el clic del div padre
+                onDeleteClick(file, "file"); // Llama a la función pasada desde HomePage, indicando el tipo
+              }}
+              className="p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300"
+              title="Eliminar Archivo"
+            >
+              <TrashIcon />
+            </button>
+          )}
       </div>
       <div>
         {/* Contenedor para icono y nombre */}
@@ -121,7 +191,9 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
       >
         {file.fileType === "video_link" ? "Ver Video" : "Abrir/Descargar"}
       </a>
-      {/* Podríamos añadir más detalles o botones de acción aquí */}
+      {/* --- Componente Tooltip --- */}
+      {/* Recuerda importar 'react-tooltip/dist/react-tooltip.css' globalmente */}
+      <Tooltip id={tooltipId} />
     </div>
   );
 }
