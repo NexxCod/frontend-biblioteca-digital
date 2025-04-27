@@ -152,12 +152,16 @@ const handleLogoutClick = () => { logout(); setIsMenuOpen(false); };
                         <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-40">
                             <div className="py-1" role="menu" aria-orientation="vertical">
                                 {/* Elementos del Menú */}
-                                <button
-                                    onClick={handleCreateFolderClick}
-                                    className="text-gray-700 hover:bg-gray-100  w-full text-left px-4 py-2 text-sm flex items-center" role="menuitem"
-                                >
-                                    <CreateFolderIcon /> Nueva Carpeta
-                                </button>
+                                {/* Botón "Nueva Carpeta" (VERIFICACIÓN DIRECTA EN JSX) */}
+                                {user?.role !== 'usuario' && ( // <--- MOSTRAR SOLO SI EL ROL NO ES 'residente/alumno'
+                                    <button
+                                        onClick={handleCreateFolderClick}
+                                        className="text-gray-700 hover:bg-gray-100 w-full text-left px-4 py-2 text-sm flex items-center"
+                                        role="menuitem"
+                                    >
+                                        <CreateFolderIcon /> Nueva Carpeta
+                                    </button>
+                                 )}
                                 <button
                                     onClick={handleUploadClick}
                                     disabled={!currentFolder}
