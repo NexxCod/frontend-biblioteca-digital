@@ -81,18 +81,17 @@ const InfoIcon = () => (
 );
 
 const formatBytes = (bytes, decimals = 2) => {
-  if (!+bytes) return '0 Bytes'
-  const k = 1024
-  const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
-}
+  if (!+bytes) return "0 Bytes";
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+};
 
 function FileItem({ file, onDeleteClick, onEditClick, user }) {
-
   const [isDownloading, setIsDownloading] = useState(false); // Estado para indicar descarga
-  const [downloadError, setDownloadError] = useState('');   // Estado para errores de descarga
+  const [downloadError, setDownloadError] = useState(""); // Estado para errores de descarga
 
   // --- Lógica de Permisos ---
   const isAdmin = user?.role === "admin";
@@ -122,7 +121,8 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
 
   // Añadir tamaño solo si no es un enlace y el tamaño existe
   if (
-    file.fileType !== "video_link" && file.fileType !== "generic_link" &&
+    file.fileType !== "video_link" &&
+    file.fileType !== "generic_link" &&
     file.size !== undefined &&
     file.size !== null
   ) {
@@ -134,53 +134,65 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
   // Genera un ID único para el tooltip de este archivo
   const tooltipId = `file-info-${file._id}`;
 
-    // --- NUEVA FUNCIÓN PARA MANEJAR LA DESCARGA ---
-    const handleDownloadClick = async (e) => {
-      e.preventDefault(); // Prevenir la navegación normal del enlace
-      setIsDownloading(true); // Mostrar indicador de carga (opcional)
-      setDownloadError('');   // Limpiar error previo
+  // --- NUEVA FUNCIÓN PARA MANEJAR LA DESCARGA ---
+  const handleDownloadClick = async (e) => {
+    // Solo intenta descargar/abrir archivos que tienen un secureUrl (enlace compartido de Drive)
+    if (
+      !file.secureUrl ||
+      file.fileType === "video_link" ||
+      file.fileType === "generic_link"
+    ) {
+      console.warn(
+        "No hay secureUrl válido o es un enlace externo para descargar."
+      );
+      setDownloadError("No disponible para descarga directa."); // Mensaje si no hay URL válida
+      return;
+    }
 
-      // URL original de Cloudinary (no necesitamos ?fl_attachment=true aquí)
-      const fileUrl = file.secureUrl;
-      // Nombre de archivo saneado desde la BD
-      const filename = file.filename;
+    e.preventDefault(); // Prevenir la navegación normal del enlace
+    setIsDownloading(true); // Mostrar indicador de carga (opcional)
+    setDownloadError(""); // Limpiar error previo
 
-      try {
-          // 1. Fetch del archivo como blob
-          const response = await fetch(fileUrl);
+    // URL original de Cloudinary (no necesitamos ?fl_attachment=true aquí)
+    const fileUrl = file.secureUrl;
+    // Nombre de archivo saneado desde la BD
+    const filename = file.filename;
 
-          if (!response.ok) {
-              throw new Error(`Error al descargar: ${response.status} ${response.statusText}`);
-          }
+    try {
+      // El fetch como blob aún puede funcionar si file.secureUrl es un enlace directo de descarga
+      // Pero si es un webViewLink (para ver en el navegador), o si quieres más control,
+      // podrías redirigir directamente a la URL de Google Drive o usar un endpoint backend.
+      // Opción 1: Simplemente redirigir a la URL de Google Drive
+      window.open(fileUrl, '_blank'); // Abre en nueva pestaña
 
-          const blob = await response.blob();
-
-          // 2. Crear URL local temporal para el blob
-          const tempUrl = window.URL.createObjectURL(blob);
-
-          // 3. Crear enlace 'a' temporal en memoria
-          const tempLink = document.createElement('a');
-          tempLink.style.display = 'none'; // Ocultarlo
-          tempLink.href = tempUrl;
-          tempLink.setAttribute('download', filename); // ¡Nombre de archivo correcto!
-
-          // 4. Añadir al DOM y simular clic
-          document.body.appendChild(tempLink);
-          tempLink.click();
-
-          // 5. Limpieza
-          document.body.removeChild(tempLink);
-          window.URL.revokeObjectURL(tempUrl);
-
-      } catch (error) {
-          console.error("Error en la descarga JS:", error);
-          setDownloadError('No se pudo descargar el archivo.'); // Mostrar error al usuario
-      } finally {
-          setIsDownloading(false); // Ocultar indicador de carga
+      // Opción 2: Si quieres forzar la descarga con JS (puede no funcionar para todos los tipos de enlaces de Drive)
+      /*
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+          throw new Error(`Error al descargar: ${response.status} ${response.statusText}`);
       }
+      const blob = await response.blob();
+      const tempUrl = window.URL.createObjectURL(blob);
+      const tempLink = document.createElement('a');
+      tempLink.style.display = 'none';
+      tempLink.href = tempUrl;
+      tempLink.setAttribute('download', filename); // ¡Nombre de archivo correcto!
+      document.body.appendChild(tempLink);
+      tempLink.click();
+      document.body.removeChild(tempLink);
+      window.URL.revokeObjectURL(tempUrl);
+      */
+
+  } catch (error) {
+      console.error("Error en la descarga/apertura JS:", error);
+      setDownloadError('No se pudo abrir/descargar el archivo.'); // Mostrar error al usuario
+  } finally {
+      setIsDownloading(false); // Ocultar indicador de carga
+  }
   };
   // --- FIN NUEVA FUNCIÓN ---
-  const isLink = file.fileType === "video_link" || file.fileType === 'generic_link';
+  const isLink =
+    file.fileType === "video_link" || file.fileType === "generic_link";
 
   return (
     <div
@@ -235,33 +247,36 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
           {file.filename}
         </p>
         {/* Mostrar error de descarga si existe */}
-        {downloadError && !isLink &&<p className="text-red-500 text-xs mt-1">{downloadError}</p>}
+        {downloadError && !isLink && (
+          <p className="text-red-500 text-xs mt-1">{downloadError}</p>
+        )}
       </div>
       {/* Enlace/Botón para abrir */}
-      
+
       {isLink ? (
-                // Si es un LINK: Renderiza un enlace normal
-                <a
-                    href={file.secureUrl} // Apunta directamente a la URL del enlace
-                    target="_blank"      // Abrir en nueva pestaña
-                    rel="noopener noreferrer"
-                    className="mt-2 text-xs text-blue-500 hover:underline block"
-                    onClick={(e) => e.stopPropagation()} // Opcional: si aún quieres evitar que se propague el clic al div padre
-                >
-                    Abrir Enlace
-                </a>
-            ) : (
-                // Si es un ARCHIVO: Renderiza el botón/enlace que llama a handleDownloadClick
-                <a
-                    href={file.secureUrl} // El href es solo un fallback aquí
-                    rel="noopener noreferrer"
-                    onClick={handleDownloadClick} // Llama a la función de descarga JS
-                    download={file.filename} // Aunque JS lo maneja, dejarlo no hace daño
-                    className="mt-2 text-xs text-blue-500 hover:underline block cursor-pointer"
-                >
-                    {isDownloading ? 'Descargando...' : 'Abrir/Descargar'}
-                </a>
-            )}
+        // Si es un LINK: Renderiza un enlace normal
+        <a
+          href={file.secureUrl} // Apunta directamente a la URL del enlace
+          target="_blank" // Abrir en nueva pestaña
+          rel="noopener noreferrer"
+          className="mt-2 text-xs text-blue-500 hover:underline block"
+          onClick={(e) => e.stopPropagation()} // Opcional: si aún quieres evitar que se propague el clic al div padre
+        >
+          Abrir Enlace
+        </a>
+      ) : (
+        // Si es un ARCHIVO: Renderiza el botón/enlace que llama a handleDownloadClick
+        <a
+          href={file.secureUrl} // El href es solo un fallback aquí
+          rel="noopener noreferrer"
+          onClick={file.secureUrl ? handleDownloadClick : (e) => e.preventDefault()} // Llama a la función de descarga JS
+          download={file.secureUrl ? file.filename : undefined}
+          target={file.secureUrl ? '_blank' : undefined}
+          className="mt-2 text-xs text-blue-500 hover:underline block cursor-pointer"
+        >
+          {isDownloading ? "Descargando..." : "Abrir/Descargar"}
+        </a>
+      )}
       {/* --- Componente Tooltip --- */}
       {/* Recuerda importar 'react-tooltip/dist/react-tooltip.css' globalmente */}
       <Tooltip id={tooltipId} className="tooltip-on-top" />
