@@ -9,6 +9,7 @@ const FileIcon = ({ fileType }) => {
   else if (fileType === "image") color = "text-blue-500";
   else if (fileType === "word") color = "text-blue-700";
   else if (fileType === "video_link") color = "text-red-700";
+  else if (fileType === "generic_link") color = "text-black-500";
 
   return (
     <svg
@@ -121,7 +122,7 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
 
   // Añadir tamaño solo si no es un enlace y el tamaño existe
   if (
-    file.fileType !== "video_link" &&
+    file.fileType !== "video_link" && file.fileType !== "generic_link" &&
     file.size !== undefined &&
     file.size !== null
   ) {
@@ -179,6 +180,7 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
       }
   };
   // --- FIN NUEVA FUNCIÓN ---
+  const isLink = file.fileType === "video_link" || file.fileType === 'generic_link';
 
   return (
     <div
@@ -233,21 +235,33 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
           {file.filename}
         </p>
         {/* Mostrar error de descarga si existe */}
-        {downloadError && <p className="text-red-500 text-xs mt-1">{downloadError}</p>}
+        {downloadError && !isLink &&<p className="text-red-500 text-xs mt-1">{downloadError}</p>}
       </div>
       {/* Enlace/Botón para abrir */}
       
-      <a
-        href={file.secureUrl} // URL de descarga directa
-        // target="_blank"
-        rel="noopener noreferrer"
-        download={file.filename}
-        className="mt-2 text-xs text-blue-500 hover:underline block cursor-pointer"
-        // onClick={(e) => e.stopPropagation()} 
-        onClick={handleDownloadClick}
-      >
-        {isDownloading ? 'Descargando...' : (file.fileType === "video_link" || file.fileType === 'generic_link' ? "Abrir Enlace" : "Abrir/Descargar")}
-      </a>
+      {isLink ? (
+                // Si es un LINK: Renderiza un enlace normal
+                <a
+                    href={file.secureUrl} // Apunta directamente a la URL del enlace
+                    target="_blank"      // Abrir en nueva pestaña
+                    rel="noopener noreferrer"
+                    className="mt-2 text-xs text-blue-500 hover:underline block"
+                    onClick={(e) => e.stopPropagation()} // Opcional: si aún quieres evitar que se propague el clic al div padre
+                >
+                    Abrir Enlace
+                </a>
+            ) : (
+                // Si es un ARCHIVO: Renderiza el botón/enlace que llama a handleDownloadClick
+                <a
+                    href={file.secureUrl} // El href es solo un fallback aquí
+                    rel="noopener noreferrer"
+                    onClick={handleDownloadClick} // Llama a la función de descarga JS
+                    download={file.filename} // Aunque JS lo maneja, dejarlo no hace daño
+                    className="mt-2 text-xs text-blue-500 hover:underline block cursor-pointer"
+                >
+                    {isDownloading ? 'Descargando...' : 'Abrir/Descargar'}
+                </a>
+            )}
       {/* --- Componente Tooltip --- */}
       {/* Recuerda importar 'react-tooltip/dist/react-tooltip.css' globalmente */}
       <Tooltip id={tooltipId} className="tooltip-on-top" />

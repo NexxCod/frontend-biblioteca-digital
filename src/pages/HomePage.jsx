@@ -433,7 +433,7 @@ function HomePage() {
 
     // Crear payload JSON
     const payload = {
-      youtubeUrl: linkUrl.trim(), // [cite: 77]
+      url: linkUrl.trim(), // [cite: 77]
       title: linkTitle.trim(), // [cite: 77]
       description: linkDescription.trim(), // [cite: 77]
       tags: linkTags.trim(), // [cite: 77]
@@ -443,7 +443,7 @@ function HomePage() {
 
     try {
       // Llamar al servicio
-      await fileService.addVideoLink(payload); // [cite: 17]
+      await fileService.addLink(payload); // [cite: 17]
       closeAddLinkModal();
       loadFolderContent(currentFolder._id, currentFolder); // Refrescar contenido
     } catch (error) {

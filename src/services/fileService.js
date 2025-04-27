@@ -47,9 +47,9 @@ const uploadFile = async (formData) => {
     }
 };
 
-// --- NUEVA Función para Añadir Enlace de Video ---
+// --- NUEVA Función para Añadir Enlace ---
 // Recibe el payload como objeto JSON
-const addVideoLink = async (payload) => {
+const addLink = async (payload) => {
     try {
         const response = await api.post('/files/add-link', payload);
         return response.data; // Devuelve el registro del enlace creado
@@ -95,7 +95,7 @@ const updateFile = async (fileId, updateData) => {
 const fileService = {
     listFiles,
     uploadFile, 
-    addVideoLink,
+    addLink,
     deleteFile,
     updateFile,
 };
