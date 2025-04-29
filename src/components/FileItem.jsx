@@ -10,6 +10,7 @@ const FileIcon = ({ fileType }) => {
   else if (fileType === "word") color = "text-blue-700";
   else if (fileType === "video_link") color = "text-red-700";
   else if (fileType === "generic_link") color = "text-black-500";
+  else if (fileType === "video") color = "text-red-500";
 
   return (
     <svg

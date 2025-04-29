@@ -769,7 +769,7 @@ function HomePage() {
                        <label htmlFor="filterFileType" className="block text-xs font-medium text-gray-700 mb-1">Tipo:</label>
                        <select id="filterFileType" value={filterFileType} onChange={handleFileTypeFilterChange} className="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-xs">
                            <option value="">Todos</option>
-                           <option value="pdf">PDF</option><option value="word">Word</option><option value="excel">Excel</option><option value="pptx">PowerPoint</option><option value="image">Imagen</option><option value="video_link">Enlace Video</option><option value="generic_link">Enlace Genérico</option><option value="other">Otro</option>
+                           <option value="pdf">PDF</option><option value="word">Word</option><option value="excel">Excel</option><option value="pptx">PowerPoint</option><option value="image">Imagen</option><option value="video_link">Enlace Video</option><option value="generic_link">Enlace Genérico</option><option value="video">Video</option><option value="other">Otro</option>
                        </select>
                    </div>
                     <div>
