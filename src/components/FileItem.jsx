@@ -11,6 +11,7 @@ const FileIcon = ({ fileType }) => {
   else if (fileType === "video_link") color = "text-red-700";
   else if (fileType === "generic_link") color = "text-black-500";
   else if (fileType === "video") color = "text-red-500";
+  else if (fileType === "audio") color = "text-green-500";
 
   return (
     <svg
