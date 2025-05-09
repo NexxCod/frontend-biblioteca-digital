@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { format } from "date-fns";
 import { Tooltip } from "react-tooltip";
 
@@ -276,7 +276,7 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
           target={file.secureUrl ? '_blank' : undefined}
           className="mt-2 text-xs text-blue-500 hover:underline block cursor-pointer"
         >
-          {isDownloading ? "Descargando..." : "Abrir/Descargar"}
+          {isDownloading ? "Descargando..." : "Descargar"}
         </a>
       )}
       {/* --- Componente Tooltip --- */}
@@ -286,4 +286,4 @@ function FileItem({ file, onDeleteClick, onEditClick, user }) {
   );
 }
 
-export default FileItem;
+export default React.memo(FileItem);

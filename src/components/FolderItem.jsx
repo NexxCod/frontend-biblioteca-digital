@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { format } from "date-fns";
 import { Tooltip } from 'react-tooltip';
 
@@ -156,4 +156,4 @@ function FolderItem({
   );
 }
 
-export default FolderItem;
+export default React.memo(FolderItem);

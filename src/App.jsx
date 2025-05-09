@@ -1,50 +1,62 @@
-import React from 'react';
+// src/App.jsx
+import React, { Suspense, lazy } from 'react'; // Importa Suspense y lazy
 import { Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import HomePage from './pages/HomePage';
-import AdminPage from './pages/AdminPage';
-import ProtectedRoute from './components/ProtectedRoute'; // Importa el protector
+// ELIMINA las importaciones directas de HomePage y AdminPage
+// import HomePage from './pages/HomePage';
+// import AdminPage from './pages/AdminPage';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// DEFINE los componentes lazy fuera de la función App
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 function App() {
   return (
-    // El AuthProvider ya envuelve esto en main.jsx
-    <Routes>
-      {/* Rutas Públicas */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+    // ENVUELVE tus Routes con Suspense y define un fallback
+    <Suspense fallback={<div className="flex justify-center items-center h-screen text-xl">Cargando página...</div>}>
+      <Routes>
+        {/* Rutas Públicas */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      {/* Rutas Protegidas */}
-      <Route
-        path="/" // Ruta principal/dashboard
-        element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Rutas Protegidas para HomePage */}
+        <Route
+          path="/" // Ruta raíz
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/folder/:folderId" // Ruta para carpetas específicas
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Puedes añadir más rutas protegidas aquí dentro de otros <ProtectedRoute> */}
-      {/* Ejemplo: <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} /> */}
+        {/* Ruta Protegida para Administración */}
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Ruta Catch-all (Opcional - para páginas no encontradas) */}
-      <Route path="*" element={<div>Página no encontrada (404)</div>} />
-
-      {/* **NUEVA RUTA PROTEGIDA PARA ADMINISTRACIÓN** */}
-       {/* Esta ruta debería ser accesible solo para admins.
-           Puedes añadir una verificación de rol dentro de AdminPage
-           o crear un ProtectedRoute más específico (ej: AdminRoute) */}
-      <Route
-        path="/admin/*" // Usamos /* para rutas anidadas dentro de /admin
-        element={
-          <ProtectedRoute>
-             {/* Podrías pasar el usuario para verificación de rol interna */}
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-
-    </Routes>
+        {/* Ruta Catch-all */}
+        <Route path="*" element={
+          <div className="flex justify-center items-center h-screen text-xl">
+            Página no encontrada (404)
+          </div>
+        } />
+      </Routes>
+    </Suspense>
   );
 }
 

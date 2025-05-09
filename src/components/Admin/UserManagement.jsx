@@ -33,7 +33,7 @@ function UserManagement() {
     const [formError, setFormError] = useState(null); // Errores específicos del formulario
 
      // Roles disponibles (hardcodeados por ahora, podrías obtenerlos del backend si tuvieras un endpoint para ello)
-     const availableRoles = ['admin', 'docente', 'residente', 'basico'];
+     const availableRoles = ['admin', 'docente', 'residente', 'usuario'];
 
 
     // --- Cargar usuarios y grupos ---
