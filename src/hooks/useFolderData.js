@@ -66,11 +66,13 @@ function useFolderData(folderIdFromUrl, filters) {
       if (operationId !== loadIdRef.current) { /* console.log(`(OpID: ${operationId}) Abortada post getFolderDetails.`); */ return; }
       setCurrentFolder(tempTargetFolderObject);
 
-      const fileParams = { searchTerm, fileType, tags: tags?.join(','), sortBy, sortOrder };
+      const fileParams = { search: searchTerm, fileType, tags: tags?.join(','), sortBy, sortOrder };
       Object.keys(fileParams).forEach(key => {
-        if (!fileParams[key] || (Array.isArray(fileParams[key]) && fileParams[key].length === 0)) {
-          delete fileParams[key];
-        }
+  if (!fileParams[key] || (Array.isArray(fileParams[key]) && fileParams[key].length === 0)) {
+    // Esta condición es para que si searchTerm es "", !fileParams[key] (donde key es 'search')
+    // se evalúe a true y se borre el parámetro 'search'.
+    delete fileParams[key];
+  }
       });
 
       // Usamos allSettled para que un error en una no detenga la otra
