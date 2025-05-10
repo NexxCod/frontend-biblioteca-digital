@@ -83,29 +83,25 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Función de Registro
-    const register = async (username, email, password) => {
-         try {
+     const register = async (username, email, password) => {
+        try {
             setLoading(true);
-            // authService.register devuelve el nuevo usuario (sin grupos inicialmente) y token
-            const data = await authService.register(username, email, password);
-             if (data && data.token) {
-                 // Hacemos login automático después del registro
-                 const { token: receivedToken, ...userData } = data;
-                 localStorage.setItem('authToken', receivedToken);
-                 // El usuario recién registrado no tendrá grupos aún
-                 localStorage.setItem('authUser', JSON.stringify(userData));
-                 setToken(receivedToken);
-                 setUser(userData);
-                 setLoading(false);
-                 return true;
-             } else {
-                 throw new Error("Respuesta de registro inválida del servidor");
-             }
-         } catch (error) {
-             console.error("Error en AuthContext register:", error);
-             setLoading(false);
-             throw error;
-         }
+            // authService.register ahora devuelve la respuesta del backend,
+            // que es un objeto con un mensaje (ej. { message: "..." }).
+            // Ya no se espera un token aquí.
+            const responseData = await authService.register(username, email, password);
+            setLoading(false);
+            
+            // Simplemente devolvemos la respuesta del servicio.
+            // RegisterPage.jsx se encargará de mostrar el mensaje al usuario.
+            return responseData; 
+        } catch (error) {
+            // El error ya debería haber sido logueado en authService.register.
+            // Aquí solo lo logueamos contextualmente y lo re-lanzamos.
+            console.error("Error en AuthContext register (propagado):", error);
+            setLoading(false);
+            throw error; // Re-lanzamos para que RegisterPage.jsx lo capture y muestre.
+        }
     };
 
     // 3. Valor que proporcionará el Contexto

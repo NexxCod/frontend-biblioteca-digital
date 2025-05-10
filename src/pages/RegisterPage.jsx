@@ -12,6 +12,8 @@ function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+     const [successMessage, setSuccessMessage] = useState(''); // Nuevo estado para mensaje de éxito
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Redirigir si el usuario ya está logueado
     useEffect(() => {
@@ -24,6 +26,7 @@ function RegisterPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(''); // Limpia errores anteriores
+        setSuccessMessage('');
 
         if (!username || !email || !password) {
             setError('Por favor, completa todos los campos.');
@@ -34,16 +37,39 @@ function RegisterPage() {
              return;
         }
 
+        setIsSubmitting(true);
+
         try {
-            const success = await register(username, email, password); // Llama a register del contexto
-            if (success) {
-                console.log("Registro y login automático exitosos!");
-                navigate('/'); // Redirige a la página principal después del registro/login
-            }
+            // La función 'register' del AuthContext ahora devuelve el objeto de respuesta del backend
+            // ej: { message: "Registro exitoso. Por favor, verifica tu correo electrónico." }
+            const responseData = await register(username, email, password);
+            
+            setSuccessMessage(responseData.message || "¡Registro exitoso! Revisa tu correo para verificar tu cuenta.");
+            
+            // Limpiar el formulario
+            setUsername('');
+            setEmail('');
+            setPassword('');
+            
+            // Opcional: Redirigir después de un breve momento o dejar al usuario en la página con el mensaje
+            // setTimeout(() => {
+            // navigate('/login');
+            // }, 3000); // Redirige a login después de 3 segundos
+
         } catch (err) {
             console.error("Error capturado en RegisterPage:", err);
-             // Muestra el mensaje de error del backend (ej: "email ya existe") o uno genérico
-            setError(err.message || 'Error durante el registro. Intenta de nuevo.');
+            // Extraer el mensaje de error de forma más robusta
+            let displayMessage;
+            if (err && typeof err.message === 'string') {
+                displayMessage = err.message;
+            } else if (typeof err === 'string') {
+                displayMessage = err;
+            } else {
+                displayMessage = 'Error durante el registro. Intenta de nuevo más tarde.';
+            }
+            setError(displayMessage);
+        } finally {
+            setIsSubmitting(false); // Finalizar carga del formulario
         }
     };
 
@@ -73,6 +99,7 @@ function RegisterPage() {
                                 onChange={(e) => setUsername(e.target.value)}
                                 className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
                                 required
+                                disabled={isSubmitting}
                             />
                         </div>
                         <div className="mt-4">
@@ -85,6 +112,7 @@ function RegisterPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
                                 required
+                                disabled={isSubmitting}
                             />
                         </div>
                         <div className="mt-4">
@@ -98,6 +126,7 @@ function RegisterPage() {
                                 className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
                                 required
                                 minLength="6"
+                                disabled={isSubmitting}
                             />
                         </div>
                         {/* Mostrar mensaje de error si existe */}
@@ -106,13 +135,20 @@ function RegisterPage() {
                                 {error}
                             </div>
                         )}
+
+                        {/* Mostrar mensaje de éxito si existe */}
+                        {successMessage && !error && ( // Solo mostrar si no hay error también
+                            <div className="mt-4 text-center text-green-600 bg-green-50 p-3 rounded-md text-sm">
+                                {successMessage}
+                            </div>
+                        )}
                         <div className="flex items-baseline justify-center">
                             <button
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isSubmitting || isLoading}
                                 className={`w-full px-6 py-2 mt-4 text-white bg-blue-600 rounded-lg hover:bg-blue-900 focus:outline-none ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                {isLoading ? 'Registrando...' : 'Registrarse'}
+                                {isSubmitting ? 'Registrando...' : 'Registrarse'}
                             </button>
                         </div>
                          <div className="mt-6 text-grey-dark text-center">

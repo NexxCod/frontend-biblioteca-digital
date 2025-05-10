@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Tooltip } from 'react-tooltip';
+import { useNavigate } from 'react-router-dom';
 
 // --- Iconos SVG --- (Definidos aquí ya que no se movieron antes)
 const CreateFolderIcon = () => (
@@ -34,6 +35,22 @@ const EllipsisVerticalIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
     </svg>
+);
+
+const HomeIcon = () => (
+  <svg
+  xmlns="http://www.w3.org/2000/svg"
+  className="h-5 w-5"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  strokeWidth={2}
+  strokeLinecap="round"
+  strokeLinejoin="round"
+>
+  <path d="M3 12L12 4l9 8" /> 
+  <path d="M5 12v7a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-7" /> 
+</svg>
 );
 
 const LogoutIcon = () => (
@@ -72,6 +89,7 @@ function HomeHeader({
 }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false); // Estado para el menú desplegable
     const menuRef = useRef(null); // Ref para detectar clics fuera
+    const navigate = useNavigate();
 
     const userInfoHtml = user ? `
         <div style="padding: 5px; text-align: left;">
@@ -95,27 +113,40 @@ useEffect(() => {
     };
 }, [menuRef]); // El efecto depende del ref
 
-// --- Handlers que cierran el menú después de la acción ---
+
 const handleCreateFolderClick = () => { openCreateFolderModal(); setIsMenuOpen(false); };
 const handleUploadClick = () => { openUploadModal(); setIsMenuOpen(false); };
 const handleAddLinkClick = () => { openAddLinkModal(); setIsMenuOpen(false); };
 const handleLogoutClick = () => { logout(); setIsMenuOpen(false); };
-// --- Fin Handlers ---
+
+const handleProfileClick = () => {
+        navigate('/profile'); // Navega a la ruta /profile
+        // Opcional: puedes cerrar el menú si estuviera abierto por otra razón
+        // setIsMenuOpen(false); 
+    };
 
     return (
 
-        <header className="bg-gray-800 text-white px-4 py-3 flex items-center w-full shadow-md mb-4 sticky top-0 z-30">
+        <header className="bg-gray-800 text-white px-6 py-4 flex items-center justify-between w-full shadow-md sticky top-0 z-30">
             <div className="flex items-center flex-1 min-w-0 mr-4"> {/* flex-1 y min-w-0 para que el título se trunque si es necesario */}
-                {canGoBack && (
-                    <button
-                        onClick={handleBackClick}
-                        title="Volver"
-                        // Estilo para fondo oscuro
-                        className="mr-3 p-1 rounded-full text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
-                    >
-                        <BackArrowIcon />
-                    </button>
-                )}
+                <div className="flex items-center gap-2 mr-4">
+  {canGoBack && (
+    <button
+      onClick={handleBackClick}
+      title="Volver"
+      className="p-1 rounded-full text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+    >
+      <BackArrowIcon />
+    </button>
+  )}
+  <button
+    onClick={() => navigate('/')}
+    title="Ir al Inicio"
+    className="p-1 rounded-full text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+  >
+    <HomeIcon />
+  </button>
+</div>
                 {/* Título de la Carpeta */}
                 <h1 className="text-lg sm:text-xl font-medium truncate"> {/* Truncate para nombres largos */}
                     {currentFolderName}
@@ -125,6 +156,7 @@ const handleLogoutClick = () => { logout(); setIsMenuOpen(false); };
             {/* ml-auto no es necesario aquí porque la sección izquierda usa flex-1 */}
             <div className="flex items-center gap-2" ref={menuRef}>
                 <button
+                    onClick={handleProfileClick} // Navega al perfil
                     className="p-1 rounded-full text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
                     data-tooltip-id={userTooltipId}
                     data-tooltip-html={userInfoHtml}

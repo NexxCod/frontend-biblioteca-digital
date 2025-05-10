@@ -6,11 +6,11 @@ import { AuthProvider } from './contexts/AuthContext.jsx' // <--- Importa el Aut
 import { BrowserRouter } from 'react-router-dom'; // Asumiendo que usarás Router aquí
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  //<React.StrictMode>
     <BrowserRouter> {/* Envuelve con BrowserRouter para las rutas */}
       <AuthProvider> {/* <--- Envuelve tu App con el AuthProvider */}
         <App />
       </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>,
+ // </React.StrictMode>,
 )
