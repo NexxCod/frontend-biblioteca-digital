@@ -7,6 +7,7 @@ import tagService from "../services/tagService";
 
 // Hooks personalizados
 import useFolderData from "../hooks/useFolderData"; // Asegúrate que la ruta sea correcta
+import useDebouncedValue from "../hooks/useDebouncedValue";
 
 // Componentes de UI
 import HomeHeader from "../components/HomeHeader";
@@ -40,6 +41,7 @@ const SearchIcon = () => (
 );
 
 function HomePage() {
+  const FILES_PAGE_SIZE = 24;
   const { user, logout, isLoading: isAuthLoading } = useAuth();
   const { folderId: folderIdFromUrl } = useParams();
   const navigate = useNavigate();
@@ -50,22 +52,27 @@ function HomePage() {
   const [filterTags, setFilterTags] = useState([]); // Array de IDs de tag
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 400);
 
   // Hook para gestionar datos de carpetas y archivos
   const {
     currentFolder,
     subfolders,
     files,
+    pagination,
     isLoading: isLoadingContent,
     error: contentError,
     refreshData,
   } = useFolderData(folderIdFromUrl, {
-    searchTerm,
+    searchTerm: debouncedSearchTerm,
     fileType: filterFileType,
     tags: filterTags,
     sortBy,
     sortOrder,
+    page: currentPage,
+    limit: FILES_PAGE_SIZE,
   });
 
   // Estados para datos globales necesarios en los formularios/modales
@@ -117,20 +124,21 @@ function HomePage() {
   // Efecto para cargar todas las etiquetas (para el selector de filtros)
   useEffect(() => {
     const fetchAllTags = async () => {
-      if (!user || isAuthLoading) return;
+      if (!user || isAuthLoading || !isFilterPanelOpen || availableTags.length > 0) {
+        return;
+      }
       try {
-        const tagsData = await tagService.listTags();
+        const tagsData = await tagService.listTags({ lite: true });
         setAvailableTags(tagsData || []);
       } catch (error) {
         console.error("Error fetching available tags:", error);
         setAvailableTags([]);
       }
     };
-    if (!isAuthLoading && user) {
-      // Solo si el usuario está cargado
+    if (!isAuthLoading && user && isFilterPanelOpen && availableTags.length === 0) {
       fetchAllTags();
     }
-  }, [user, isAuthLoading]);
+  }, [user, isAuthLoading, isFilterPanelOpen, availableTags.length]);
 
   // --- Manejadores de Navegación ---
   const handleFolderClick = useCallback(
@@ -138,6 +146,7 @@ function HomePage() {
       setSearchTerm(""); // Resetear filtros al navegar
       setFilterFileType("");
       setFilterTags([]);
+      setCurrentPage(1);
       navigate(`/folder/${folder._id}`);
     },
     [navigate]
@@ -148,6 +157,7 @@ function HomePage() {
     setSearchTerm(""); // Resetear filtros al navegar
     setFilterFileType("");
     setFilterTags([]);
+    setCurrentPage(1);
     if (parentId) {
       navigate(`/folder/${parentId}`);
     } else {
@@ -195,18 +205,23 @@ function HomePage() {
     switch (filterName) {
       case "searchTerm":
         setSearchTerm(value);
+        setCurrentPage(1);
         break;
       case "fileType":
         setFilterFileType(value);
+        setCurrentPage(1);
         break;
       case "tags":
         setFilterTags(value); // value ya es un array de IDs desde FilterPanel
+        setCurrentPage(1);
         break;
       case "sortBy":
         setSortBy(value);
+        setCurrentPage(1);
         break;
       case "sortOrder":
         setSortOrder(value);
+        setCurrentPage(1);
         break;
       default:
         break;
@@ -214,6 +229,17 @@ function HomePage() {
   }, []); // Dependencias vacías ya que los setters de useState son estables
 
   const handleToggleFilterPanel = () => setIsFilterPanelOpen((prev) => !prev);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [folderIdFromUrl]);
+
+  useEffect(() => {
+    if (pagination.totalPages > 0 && currentPage > pagination.totalPages) {
+      setCurrentPage(pagination.totalPages);
+    }
+  }, [currentPage, pagination.totalPages]);
+
   // --- Variables Derivadas para Renderizado ---
   const mainTitle = currentFolder ? currentFolder.name : "Inicio";
   const canGoBack = !!folderIdFromUrl; // Podemos volver si estamos en una subcarpeta
@@ -233,6 +259,10 @@ function HomePage() {
     !contentError &&
     (!files || files.length === 0) &&
     (folderIdFromUrl || currentFolder); // Estamos dentro de una carpeta
+  const showPagination =
+    !contentError &&
+    (folderIdFromUrl || currentFolder) &&
+    pagination.totalPages > 1;
 
   if (isAuthLoading && !user) {
     // Muestra carga solo si aún no hay usuario
@@ -344,6 +374,37 @@ function HomePage() {
               onEditClick={openEditModal}
               user={user}
             />
+          )}
+          {showPagination && (
+            <div className="mt-4 flex items-center justify-between gap-3 text-sm text-gray-600">
+              <p>
+                Página {pagination.page} de {pagination.totalPages}
+                {" · "}
+                {pagination.totalItems} elementos
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={!pagination.hasPrevPage || isLoadingContent}
+                  className="px-3 py-1.5 rounded border border-gray-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((prev) =>
+                      pagination.hasNextPage ? prev + 1 : prev
+                    )
+                  }
+                  disabled={!pagination.hasNextPage || isLoadingContent}
+                  className="px-3 py-1.5 rounded border border-gray-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}

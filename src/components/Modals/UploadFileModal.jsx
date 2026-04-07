@@ -54,15 +54,19 @@ function UploadFileModal({ isOpen, onClose, targetFolderId, groupsToShow, onFile
     setError('');
     setUploadProgress(0);
 
-    const formData = new FormData();
-    formData.append("file", uploadFile);
-    formData.append("folderId", targetFolderId);
-    if (description) formData.append("description", description);
-    if (tags) formData.append("tags", tags);
-    if (groupId) formData.append("assignedGroupId", groupId);
-
     try {
-      await fileService.uploadFile(formData, (progress) => setUploadProgress(progress));
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+      formData.append('description', description);
+      formData.append('tags', tags);
+      formData.append('folderId', targetFolderId);
+      formData.append('assignedGroupId', groupId || '');
+
+      await fileService.uploadFile(
+        formData,
+        (progress) => setUploadProgress(progress)
+      );
+
       onFileUploaded();
       onClose();
     } catch (err) {

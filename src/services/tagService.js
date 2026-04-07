@@ -2,11 +2,12 @@
 import api from './api'; // Importa la instancia configurada de Axios
 
 // Función para listar todas las etiquetas disponibles
-const listTags = async () => {
+const listTags = async (options = {}) => {
     try {
+        const query = options.lite ? '?lite=1' : '';
         // Realiza una petición GET al endpoint de tags
         // La instancia 'api' ya incluye la lógica para añadir el token de autenticación
-        const response = await api.get('/tags');
+        const response = await api.get(`/tags${query}`);
 
         // Devuelve los datos de la respuesta (se espera un array de tags)
         return response.data;

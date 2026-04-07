@@ -9,12 +9,20 @@ function useFolderData(folderIdFromUrl, filters) {
   const [currentFolder, setCurrentFolder] = useState(null);
   const [subfolders, setSubfolders] = useState([]);
   const [files, setFiles] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 24,
+    totalItems: 0,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
   const [isLoading, setIsLoading] = useState(true); // MANTENER EN TRUE INICIALMENTE
   const [error, setError] = useState('');
   const loadIdRef = useRef(0);
   const prevFolderIdRef = useRef(folderIdFromUrl); // Para detectar cambio de carpeta
 
-  const { searchTerm, fileType, tags, sortBy, sortOrder } = filters;
+  const { searchTerm, fileType, tags, sortBy, sortOrder, page, limit } = filters;
 
   const loadData = useCallback(async (operationId) => {
     if (!user || isAuthLoading) {
@@ -25,6 +33,7 @@ function useFolderData(folderIdFromUrl, filters) {
         setCurrentFolder(null);
         setSubfolders([]);
         setFiles([]);
+        setPagination((prev) => ({ ...prev, page: 1, totalItems: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false }));
         setError('');
       }
       setIsLoading(false); // Indicar que la carga (o intento) terminó.
@@ -47,12 +56,14 @@ function useFolderData(folderIdFromUrl, filters) {
         setCurrentFolder(null);
         setSubfolders([]);
         setFiles([]);
+        setPagination((prev) => ({ ...prev, page: 1, totalItems: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false }));
         prevFolderIdRef.current = folderIdFromUrl; // Actualizar la referencia del folderId previo
     } else if (!folderIdFromUrl && operationId === 1) { // Caso de carga inicial en la raíz
         // console.log(`(OpID: ${operationId}) Carga inicial en la raíz. Limpiando por si acaso.`);
         setCurrentFolder(null);
         setSubfolders([]);
         setFiles([]);
+        setPagination((prev) => ({ ...prev, page: 1, totalItems: 0, totalPages: 1, hasNextPage: false, hasPrevPage: false }));
     }
 
 
@@ -66,7 +77,15 @@ function useFolderData(folderIdFromUrl, filters) {
       if (operationId !== loadIdRef.current) { /* console.log(`(OpID: ${operationId}) Abortada post getFolderDetails.`); */ return; }
       setCurrentFolder(tempTargetFolderObject);
 
-      const fileParams = { search: searchTerm, fileType, tags: tags?.join(','), sortBy, sortOrder };
+      const fileParams = {
+        search: searchTerm,
+        fileType,
+        tags: tags?.join(','),
+        sortBy,
+        sortOrder,
+        page,
+        limit,
+      };
       Object.keys(fileParams).forEach(key => {
   if (!fileParams[key] || (Array.isArray(fileParams[key]) && fileParams[key].length === 0)) {
     // Esta condición es para que si searchTerm es "", !fileParams[key] (donde key es 'search')
@@ -93,10 +112,40 @@ function useFolderData(folderIdFromUrl, filters) {
       }
 
       if (fileResults.status === 'fulfilled') {
-        setFiles(Array.isArray(fileResults.value) ? fileResults.value : []);
+        if (Array.isArray(fileResults.value)) {
+          setFiles(fileResults.value);
+          setPagination({
+            page: 1,
+            limit: fileResults.value.length,
+            totalItems: fileResults.value.length,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPrevPage: false,
+          });
+        } else {
+          setFiles(Array.isArray(fileResults.value?.items) ? fileResults.value.items : []);
+          setPagination(
+            fileResults.value?.pagination || {
+              page: page || 1,
+              limit: limit || 24,
+              totalItems: 0,
+              totalPages: 1,
+              hasNextPage: false,
+              hasPrevPage: false,
+            }
+          );
+        }
       } else {
         console.error(`(OpID: ${operationId}) Error listando archivos:`, fileResults.reason);
         setFiles([]); // Limpiar si falla
+        setPagination({
+          page: page || 1,
+          limit: limit || 24,
+          totalItems: 0,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPrevPage: false,
+        });
         // Podrías acumular errores
         setError(prevError => prevError ? `${prevError}\n${fileResults.reason?.response?.data?.message || fileResults.reason?.message || 'Error al cargar archivos.'}` : (fileResults.reason?.response?.data?.message || fileResults.reason?.message || 'Error al cargar archivos.'));
       }
@@ -107,13 +156,21 @@ function useFolderData(folderIdFromUrl, filters) {
       setCurrentFolder(null);
       setSubfolders([]);
       setFiles([]);
+      setPagination({
+        page: page || 1,
+        limit: limit || 24,
+        totalItems: 0,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      });
     } finally {
       if (operationId === loadIdRef.current) {
         setIsLoading(false);
         // console.log(`(OpID: ${operationId}) Carga finalizada. isLoading: false`);
       }
     }
-  }, [user, isAuthLoading, folderIdFromUrl, searchTerm, fileType, tags, sortBy, sortOrder]);
+  }, [user, isAuthLoading, folderIdFromUrl, searchTerm, fileType, tags, sortBy, sortOrder, page, limit]);
 
 
   // Efecto para la carga de datos (inicial, navegación, o cambio de filtros)
@@ -128,7 +185,7 @@ function useFolderData(folderIdFromUrl, filters) {
         // Si la autenticación está en progreso, nos aseguramos que isLoading sea true.
         setIsLoading(true);
     }
-  }, [folderIdFromUrl, searchTerm, fileType, tags, sortBy, sortOrder, user, isAuthLoading, loadData]);
+  }, [folderIdFromUrl, searchTerm, fileType, tags, sortBy, sortOrder, page, limit, user, isAuthLoading, loadData]);
   // Incluimos loadData aquí porque sus dependencias (user, isAuthLoading, folderIdFromUrl, filters) son las mismas
   // que queremos que disparen la recarga. React se encargará de la memoización de loadData si sus dependencias no cambian.
 
@@ -143,7 +200,7 @@ function useFolderData(folderIdFromUrl, filters) {
     return Promise.resolve();
   }, [loadData, isAuthLoading, user]); // loadData es dependencia aquí
 
-  return { currentFolder, subfolders, files, isLoading, error, refreshData };
+  return { currentFolder, subfolders, files, pagination, isLoading, error, refreshData };
 }
 
 export default useFolderData;
