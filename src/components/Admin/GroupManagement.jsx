@@ -153,30 +153,33 @@ function GroupManagement() {
 
 
     if (isLoading) {
-        return <div className="text-center">Cargando grupos...</div>;
+        return <div className="text-center text-[var(--text-muted)]">Cargando grupos...</div>;
     }
 
     if (error) {
-        return <div className="text-center text-red-600">Error: {error}</div>;
+        return <div className="status-error">Error: {error}</div>;
     }
 
 
     return (
         <div>
-            <h2 className="text-xl font-semibold mb-4">Gestión de Grupos</h2>
+            <h2 className="text-2xl text-[var(--text-main)]">Gestión de Grupos</h2>
+            <p className="mt-2 mb-6 text-sm text-[var(--text-muted)]">
+                Define equipos, audiencias y permisos con una tabla más legible y acciones mejor separadas.
+            </p>
 
             {/* Botón para crear nuevo grupo */}
             <button
                 onClick={openCreateModal}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none mb-6"
+                className="app-button-primary mb-6"
             >
                 Crear Nuevo Grupo
             </button>
 
             {/* Tabla de Grupos */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            <div className="app-table-shell">
+                <table className="app-table">
+                    <thead>
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
@@ -185,23 +188,23 @@ function GroupManagement() {
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                         {groups.map((group) => (
                             <tr key={group._id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{group.name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-500">{group.description}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{group.memberCount}</td> {/* Mostrar el conteo */}
-                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{group.createdBy?.username || 'N/A'}</td> {/* Mostrar nombre del creador */}
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <td className="whitespace-nowrap text-sm font-medium text-[var(--text-main)]">{group.name}</td>
+                                <td className="text-sm text-[var(--text-muted)]">{group.description}</td>
+                                <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">{group.memberCount}</td> {/* Mostrar el conteo */}
+                                 <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">{group.createdBy?.username || 'N/A'}</td> {/* Mostrar nombre del creador */}
+                                <td className="whitespace-nowrap text-right text-sm font-medium">
                                     <button
                                         onClick={() => openEditModal(group)}
-                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                        className="table-action mr-4"
                                     >
                                         Editar
                                     </button>
                                     <button
                                         onClick={() => openDeleteConfirmModal(group)}
-                                        className="text-red-600 hover:text-red-900"
+                                        className="table-action-danger"
                                     >
                                         Eliminar
                                     </button>

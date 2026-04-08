@@ -154,51 +154,54 @@ function TagManagement() {
 
 
     if (isLoading) {
-        return <div className="text-center">Cargando etiquetas...</div>;
+        return <div className="text-center text-[var(--text-muted)]">Cargando etiquetas...</div>;
     }
 
     if (error) {
-        return <div className="text-center text-red-600">Error: {error}</div>;
+        return <div className="status-error">Error: {error}</div>;
     }
 
 
     return (
         <div>
-            <h2 className="text-xl font-semibold mb-4">Gestión de Etiquetas</h2>
+            <h2 className="text-2xl text-[var(--text-main)]">Gestión de Etiquetas</h2>
+            <p className="mt-2 mb-6 text-sm text-[var(--text-muted)]">
+                Ordena la clasificación del contenido con una vista más simple y centrada en mantenimiento rápido.
+            </p>
 
             {/* Botón para crear nueva etiqueta */}
             <button
                 onClick={openCreateModal}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none mb-6"
+                className="app-button-primary mb-6"
             >
                 Crear Nueva Etiqueta
             </button>
 
             {/* Tabla de Etiquetas */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            <div className="app-table-shell">
+                <table className="app-table">
+                    <thead>
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creado Por</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                         {tags.map((tag) => (
                             <tr key={tag._id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tag.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tag.createdBy?.username || 'N/A'}</td> {/* Mostrar nombre del creador */}
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <td className="whitespace-nowrap text-sm font-medium text-[var(--text-main)]">{tag.name}</td>
+                                <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">{tag.createdBy?.username || 'N/A'}</td> {/* Mostrar nombre del creador */}
+                                <td className="whitespace-nowrap text-right text-sm font-medium">
                                     <button
                                         onClick={() => openEditModal(tag)}
-                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                        className="table-action mr-4"
                                     >
                                         Editar
                                     </button>
                                     <button
                                         onClick={() => openDeleteConfirmModal(tag)}
-                                        className="text-red-600 hover:text-red-900"
+                                        className="table-action-danger"
                                     >
                                         Eliminar
                                     </button>

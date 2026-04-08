@@ -1,33 +1,36 @@
-// src/App.jsx
-import React, { Suspense, lazy } from 'react'; // Importa Suspense y lazy
-import { Routes, Route } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ProtectedRoute from './components/ProtectedRoute';
+import React, { Suspense, lazy } from "react";
+import { Route, Routes } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ModernLoginPage from "./pages/ModernLoginPage";
+import ModernRegisterPage from "./pages/ModernRegisterPage";
 
-// DEFINE los componentes lazy fuera de la función App
-const HomePage = lazy(() => import('./pages/HomePage'));
-const AdminPage = lazy(() => import('./pages/AdminPage'));
-const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const HomePage = lazy(() => import("./pages/LibraryHomePage"));
+const AdminPage = lazy(() => import("./pages/ModernAdminPage"));
+const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ModernForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ModernResetPasswordPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 function App() {
   return (
-    // ENVUELVE tus Routes con Suspense y define un fallback
-    <Suspense fallback={<div className="flex justify-center items-center h-screen text-xl">Cargando página...</div>}>
+    <Suspense
+      fallback={
+        <div className="page-shell flex min-h-screen items-center justify-center">
+          <div className="glass-panel rounded-[28px] px-8 py-6 text-lg">
+            Cargando página...
+          </div>
+        </div>
+      }
+    >
       <Routes>
-        {/* Rutas Públicas */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<ModernLoginPage />} />
+        <Route path="/register" element={<ModernRegisterPage />} />
         <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Rutas Protegidas para HomePage */}
         <Route
-          path="/" // Ruta raíz
+          path="/"
           element={
             <ProtectedRoute>
               <HomePage />
@@ -35,15 +38,13 @@ function App() {
           }
         />
         <Route
-          path="/folder/:folderId" // Ruta para carpetas específicas
+          path="/folder/:folderId"
           element={
             <ProtectedRoute>
               <HomePage />
             </ProtectedRoute>
           }
         />
-
-        {/* Ruta Protegida para Administración */}
         <Route
           path="/admin/*"
           element={
@@ -52,22 +53,30 @@ function App() {
             </ProtectedRoute>
           }
         />
-      <Route
-          path="/profile" // O la ruta que prefieras para el perfil
+        <Route
+          path="/profile"
           element={
             <ProtectedRoute>
               <ProfilePage />
             </ProtectedRoute>
           }
         />
-
-
-        {/* Ruta Catch-all */}
-        <Route path="*" element={
-          <div className="flex justify-center items-center h-screen text-xl">
-            Página no encontrada (404)
-          </div>
-        } />
+        <Route
+          path="*"
+          element={
+            <div className="page-shell flex min-h-screen items-center justify-center">
+              <div className="glass-panel rounded-[30px] px-8 py-10 text-center">
+                <span className="eyebrow">404</span>
+                <h1 className="mt-4 text-4xl text-[var(--text-main)]">
+                  Página no encontrada
+                </h1>
+                <p className="mt-3 max-w-md text-sm text-[var(--text-muted)]">
+                  La ruta que intentaste abrir no existe o cambió durante el rediseño.
+                </p>
+              </div>
+            </div>
+          }
+        />
       </Routes>
     </Suspense>
   );

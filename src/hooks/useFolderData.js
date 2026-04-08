@@ -23,6 +23,15 @@ function useFolderData(folderIdFromUrl, filters) {
   const prevFolderIdRef = useRef(folderIdFromUrl); // Para detectar cambio de carpeta
 
   const { searchTerm, fileType, tags, sortBy, sortOrder, page, limit } = filters;
+  const shouldLoadGlobalFiles = Boolean(
+    !folderIdFromUrl &&
+      (searchTerm ||
+        fileType ||
+        tags?.length ||
+        sortBy !== 'createdAt' ||
+        sortOrder !== 'desc' ||
+        page > 1)
+  );
 
   const loadData = useCallback(async (operationId) => {
     if (!user || isAuthLoading) {
@@ -97,7 +106,9 @@ function useFolderData(folderIdFromUrl, filters) {
       // Usamos allSettled para que un error en una no detenga la otra
       const [subfolderResults, fileResults] = await Promise.allSettled([
         folderService.listFolders(folderIdFromUrl),
-        folderIdFromUrl ? fileService.listFiles(folderIdFromUrl, fileParams) : Promise.resolve([])
+        folderIdFromUrl || shouldLoadGlobalFiles
+          ? fileService.listFiles(folderIdFromUrl, fileParams)
+          : Promise.resolve([])
       ]);
 
       if (operationId !== loadIdRef.current) { /* console.log(`(OpID: ${operationId}) Abortada post listContents.`); */ return; }
@@ -170,7 +181,7 @@ function useFolderData(folderIdFromUrl, filters) {
         // console.log(`(OpID: ${operationId}) Carga finalizada. isLoading: false`);
       }
     }
-  }, [user, isAuthLoading, folderIdFromUrl, searchTerm, fileType, tags, sortBy, sortOrder, page, limit]);
+  }, [user, isAuthLoading, folderIdFromUrl, searchTerm, fileType, tags, sortBy, sortOrder, page, limit, shouldLoadGlobalFiles]);
 
 
   // Efecto para la carga de datos (inicial, navegación, o cambio de filtros)
@@ -200,7 +211,16 @@ function useFolderData(folderIdFromUrl, filters) {
     return Promise.resolve();
   }, [loadData, isAuthLoading, user]); // loadData es dependencia aquí
 
-  return { currentFolder, subfolders, files, pagination, isLoading, error, refreshData };
+  return {
+    currentFolder,
+    subfolders,
+    files,
+    pagination,
+    isLoading,
+    error,
+    refreshData,
+    isGlobalFilesView: shouldLoadGlobalFiles && !folderIdFromUrl,
+  };
 }
 
 export default useFolderData;

@@ -1,10 +1,401 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
-@import 'react-tooltip/dist/react-tooltip.css';
+@import "react-tooltip/dist/react-tooltip.css";
 
-/* Clase para asegurar que el tooltip esté encima de otros elementos */
+:root {
+  --bg-main: #f4f0e8;
+  --bg-accent: #dce7e4;
+  --bg-soft: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.84);
+  --panel-muted: rgba(250, 248, 244, 0.92);
+  --line-soft: rgba(42, 61, 54, 0.12);
+  --line-strong: rgba(18, 42, 37, 0.18);
+  --text-main: #18312d;
+  --text-muted: #5b6f68;
+  --text-soft: #7b8b85;
+  --brand: #154a43;
+  --brand-strong: #0d362f;
+  --brand-soft: #dbece7;
+  --warm: #c9774d;
+  --warm-soft: #f4e1d5;
+  --shadow-soft: 0 20px 60px rgba(39, 57, 52, 0.08);
+  --shadow-card: 0 14px 40px rgba(22, 36, 31, 0.08);
+  --radius-xl: 28px;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--text-main);
+  font-family: "Manrope", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(219, 236, 231, 0.94), transparent 38%),
+    radial-gradient(circle at 85% 18%, rgba(244, 225, 213, 0.88), transparent 28%),
+    linear-gradient(180deg, #faf8f3 0%, #f4f0e8 52%, #ede7dc 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Fraunces", serif;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: rgba(21, 74, 67, 0.16);
+  color: var(--brand-strong);
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(21, 74, 67, 0.14);
+}
+
 .tooltip-on-top {
-    /* El z-index debe ser mayor que el de tu header (z-30 = 30) */
-    /* Usamos un valor alto para estar seguros */
-    z-index: 50 !important;
-    /* '!important' a veces es necesario para sobreescribir estilos por defecto */
+  z-index: 60 !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 14px !important;
+  padding: 0.9rem 1rem !important;
+  box-shadow: var(--shadow-card);
+}
+
+.page-shell {
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 28px 18px 56px;
+}
+
+.glass-panel {
+  background: var(--panel-strong);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.soft-panel {
+  background: var(--panel-muted);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-card);
+}
+
+.section-title {
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  line-height: 1.05;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(21, 74, 67, 0.08);
+  color: var(--brand);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-button-primary,
+.app-button-secondary,
+.app-button-ghost,
+.app-button-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.85rem 1.15rem;
+  border-radius: 999px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.app-button-primary {
+  background: linear-gradient(135deg, var(--brand) 0%, #236158 100%);
+  color: white;
+  box-shadow: 0 12px 28px rgba(21, 74, 67, 0.2);
+}
+
+.app-button-primary:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--brand-strong) 0%, var(--brand) 100%);
+}
+
+.app-button-secondary {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--brand);
+  border-color: rgba(21, 74, 67, 0.12);
+}
+
+.app-button-secondary:hover {
+  background: white;
+  border-color: rgba(21, 74, 67, 0.22);
+}
+
+.app-button-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: rgba(24, 49, 45, 0.08);
+}
+
+.app-button-ghost:hover {
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text-main);
+}
+
+.app-button-danger {
+  background: #8e2b2b;
+  color: white;
+}
+
+.app-input,
+.app-select,
+.app-textarea {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(24, 49, 45, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text-main);
+  padding-block: 0.92rem;
+  padding-inline: 1rem;
+  font-size: 0.95rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.app-input-with-icon {
+  padding-left: 3.2rem;
+}
+
+.app-file-input {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(24, 49, 45, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text-muted);
+  padding: 0.55rem;
+}
+
+.app-file-input::file-selector-button {
+  margin-right: 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  padding: 0.72rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.app-input::placeholder,
+.app-textarea::placeholder {
+  color: var(--text-soft);
+}
+
+.app-input:focus,
+.app-select:focus,
+.app-textarea:focus {
+  border-color: rgba(21, 74, 67, 0.35);
+  box-shadow:
+    0 0 0 4px rgba(21, 74, 67, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.status-error,
+.status-success,
+.status-warning {
+  border-radius: 18px;
+  padding: 0.9rem 1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.status-error {
+  background: rgba(174, 56, 44, 0.1);
+  border: 1px solid rgba(174, 56, 44, 0.12);
+  color: #8a2c26;
+}
+
+.status-success {
+  background: rgba(31, 115, 85, 0.1);
+  border: 1px solid rgba(31, 115, 85, 0.12);
+  color: #1f5f4f;
+}
+
+.status-warning {
+  background: rgba(201, 119, 77, 0.12);
+  border: 1px solid rgba(201, 119, 77, 0.16);
+  color: #8b4f2e;
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 470px);
+  gap: 20px;
+  align-items: stretch;
+  padding: 18px;
+}
+
+.auth-hero,
+.auth-panel {
+  border-radius: 32px;
+}
+
+.auth-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(22px, 4vw, 42px);
+  background:
+    radial-gradient(circle at top left, rgba(244, 225, 213, 0.92), transparent 30%),
+    linear-gradient(145deg, #113d37 0%, #1a544c 55%, #2c6c63 100%);
+  color: white;
+  box-shadow: 0 32px 80px rgba(17, 61, 55, 0.24);
+}
+
+.auth-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -8% -28% auto;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  filter: blur(0);
+}
+
+.auth-panel {
+  padding: clamp(22px, 4vw, 34px);
+}
+
+.auth-link {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.auth-link:hover {
+  color: var(--brand-strong);
+}
+
+.app-table-shell {
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(24, 49, 45, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow-card);
+}
+
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.app-table th {
+  padding: 0.95rem 1.2rem;
+  background: rgba(219, 236, 231, 0.46);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.app-table td {
+  padding: 1rem 1.2rem;
+  border-top: 1px solid rgba(24, 49, 45, 0.08);
+  color: var(--text-main);
+  font-size: 0.94rem;
+  vertical-align: top;
+}
+
+.app-table tr:hover td {
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.table-action {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.table-action-danger {
+  color: #8e2b2b;
+  font-weight: 700;
+}
+
+@media (max-width: 1100px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
   }
+
+  .auth-hero {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-shell {
+    padding: 18px 14px 42px;
+  }
+
+  .auth-shell {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .auth-hero,
+  .auth-panel {
+    border-radius: 24px;
+  }
+
+  .auth-hero {
+    display: none;
+  }
+}

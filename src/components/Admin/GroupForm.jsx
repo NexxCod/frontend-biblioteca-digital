@@ -19,7 +19,7 @@ function GroupForm({
         <form onSubmit={onSubmit}>
             {/* Nombre del Grupo */}
             <div className="mb-4">
-                <label htmlFor="groupName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="groupName" className="field-label">
                     Nombre del Grupo:
                 </label>
                 <input
@@ -28,7 +28,7 @@ function GroupForm({
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="app-input"
                     required
                     autoFocus
                 />
@@ -36,7 +36,7 @@ function GroupForm({
 
             {/* Descripción del Grupo (Opcional) */}
             <div className="mb-4">
-                <label htmlFor="groupDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="groupDescription" className="field-label">
                     Descripción (Opcional):
                 </label>
                 <textarea
@@ -45,12 +45,12 @@ function GroupForm({
                     value={formData.description}
                     onChange={handleChange}
                     rows="2"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="app-textarea"
                 ></textarea>
             </div>
 
             {/* Error */}
-            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            {error && <p className="status-error mb-3">{error}</p>}
 
             {/* Botones */}
             <div className="flex justify-end gap-2">
@@ -58,14 +58,14 @@ function GroupForm({
                     type="button"
                     onClick={onCancel}
                     disabled={isLoading}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 focus:outline-none"
+                    className="app-button-ghost"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className={`px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-800 focus:outline-none ${
+                    className={`app-button-primary ${
                         isLoading ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                 >

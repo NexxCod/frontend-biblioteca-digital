@@ -1,13 +1,18 @@
 import api from "./api";
 
 const listFiles = async (folderId, params = {}) => {
-  if (!folderId) {
-    console.error("listFiles requiere un folderId");
-    return [];
-  }
-
   try {
-    const queryParams = new URLSearchParams({ folderId, ...params });
+    const queryParams = new URLSearchParams();
+
+    if (folderId) {
+      queryParams.set("folderId", folderId);
+    }
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        queryParams.set(key, value);
+      }
+    });
 
     Object.keys(params).forEach((key) => {
       if (
@@ -22,7 +27,12 @@ const listFiles = async (folderId, params = {}) => {
     const response = await api.get(`/files?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
-    console.error(`Error listando archivos para carpeta ${folderId}:`, error);
+    console.error(
+      folderId
+        ? `Error listando archivos para carpeta ${folderId}:`
+        : "Error listando archivos globales:",
+      error
+    );
     throw error;
   }
 };

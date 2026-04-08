@@ -145,17 +145,20 @@ function UserManagement() {
 
 
     if (isLoading) {
-        return <div className="text-center">Cargando usuarios...</div>;
+        return <div className="text-center text-[var(--text-muted)]">Cargando usuarios...</div>;
     }
 
     if (error) {
-        return <div className="text-center text-red-600">Error: {error}</div>;
+        return <div className="status-error">Error: {error}</div>;
     }
 
     // Renderizar la tabla de usuarios
     return (
         <div>
-            <h2 className="text-xl font-semibold mb-4">Gestión de Usuarios</h2>
+            <h2 className="text-2xl text-[var(--text-main)]">Gestión de Usuarios</h2>
+            <p className="mt-2 mb-6 text-sm text-[var(--text-muted)]">
+                Administra accesos, roles y pertenencia a grupos desde una vista más limpia y fácil de revisar.
+            </p>
 
              {/* Opcional: Botón para crear nuevo usuario si implementas esa función para admins */}
              {/* <button
@@ -167,9 +170,9 @@ function UserManagement() {
 
 
             {/* Tabla de Usuarios */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            <div className="app-table-shell">
+                <table className="app-table">
+                    <thead>
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
@@ -178,19 +181,19 @@ function UserManagement() {
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th> {/* Editar, Eliminar */}
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                         {users.map((user) => (
                             <tr key={user._id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="whitespace-nowrap text-sm font-medium text-[var(--text-main)]">{user.username}</td>
+                                <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">{user.email}</td>
+                                <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">{user.role}</td>
+                                <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">
                                     {user.groups.map(group => group.name).join(', ') || 'Ninguno'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <td className="whitespace-nowrap text-right text-sm font-medium">
                                      {/* Botones de Editar y Eliminar */}
-                                    <button onClick={() => openEditModal(user)} className="text-indigo-600 hover:text-indigo-900 mr-4">Editar</button>
-                                    <button onClick={() => openDeleteConfirmModal(user)} className="text-red-600 hover:text-red-900">Eliminar</button>
+                                    <button onClick={() => openEditModal(user)} className="table-action mr-4">Editar</button>
+                                    <button onClick={() => openDeleteConfirmModal(user)} className="table-action-danger">Eliminar</button>
                                 </td>
                             </tr>
                         ))}

@@ -19,87 +19,58 @@ function AddLinkForm({
   error,
 }) {
   return (
-    <form onSubmit={onSubmit}>
-      {/* URL */}
+    <form onSubmit={onSubmit} className="space-y-4">
       <div className="mb-4">
-        <label
-          htmlFor="linkUrl"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          URL:
-        </label>
+        <label htmlFor="linkUrl" className="field-label">URL</label>
         <input
           type="url"
           id="linkUrl"
           value={linkUrl}
           onChange={(e) => setLinkUrl(e.target.value)}
           required
-          placeholder="https://ejemplo.com ó https://youtube.com/..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          placeholder="https://ejemplo.com"
+          className="app-input"
         />
       </div>
-      {/* Título */}
       <div className="mb-4">
-        <label
-          htmlFor="linkTitle"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Título:
-        </label>
+        <label htmlFor="linkTitle" className="field-label">Título</label>
         <input
           type="text"
           id="linkTitle"
           value={linkTitle}
           onChange={(e) => setLinkTitle(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="app-input"
         />
       </div>
-      {/* Descripción */}
       <div className="mb-4">
-        <label
-          htmlFor="linkDesc"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Descripción:
-        </label>
+        <label htmlFor="linkDesc" className="field-label">Descripción</label>
         <textarea
           id="linkDesc"
           value={linkDescription}
           onChange={(e) => setLinkDescription(e.target.value)}
           rows="2"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="app-textarea"
         ></textarea>
       </div>
-      {/* Tags */}
       <div className="mb-4">
-        <label
-          htmlFor="linkTags"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Etiquetas:
-        </label>
+        <label htmlFor="linkTags" className="field-label">Etiquetas</label>
         <input
           type="text"
           id="linkTags"
           value={linkTags}
           onChange={(e) => setLinkTags(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Separadas por coma"
+          className="app-input"
         />
       </div>
-      {/* Grupo */}
       <div className="mb-4">
-        <label
-          htmlFor="linkGroup"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Asignar Grupo:
-        </label>
+        <label htmlFor="linkGroup" className="field-label">Grupo</label>
         <select
           id="linkGroup"
           value={linkGroupId}
           onChange={(e) => setLinkGroupId(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+          className="app-select"
         >
           <option value="">Público</option>
           {groupsToShow?.map((g) => (
@@ -109,26 +80,24 @@ function AddLinkForm({
           ))}
         </select>
       </div>
-      {/* Error */}
-      {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-      {/* Botones */}
-      <div className="flex justify-end gap-2">
+      {error && <p className="status-error mb-3">{error}</p>}
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onCancel}
           disabled={isLoading}
-          className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 focus:outline-none"
+          className="app-button-ghost"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className={`px-4 py-2 text-white bg-purple-600 rounded hover:bg-purple-800 focus:outline-none ${
+          className={`app-button-primary ${
             isLoading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          {isLoading ? "Añadiendo..." : "Añadir"}
+          {isLoading ? "Guardando..." : "Guardar enlace"}
         </button>
       </div>
     </form>
