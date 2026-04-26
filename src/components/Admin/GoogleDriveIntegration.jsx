@@ -23,6 +23,15 @@ const errorMessage = (err) =>
   err?.data?.message ||
   "Error desconocido";
 
+const EXPECTED_OPENER_ORIGIN = (() => {
+  try {
+    const raw = import.meta.env.VITE_API_BASE_URL;
+    return raw ? new URL(raw, window.location.origin).origin : null;
+  } catch {
+    return null;
+  }
+})();
+
 function GoogleDriveIntegration() {
   const [status, setStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +44,7 @@ function GoogleDriveIntegration() {
   const [isSavingManual, setIsSavingManual] = useState(false);
 
   const popupRef = useRef(null);
+  const popupWatcherRef = useRef(null);
 
   const loadStatus = useCallback(async ({ verify = false } = {}) => {
     if (verify) {
@@ -60,6 +70,9 @@ function GoogleDriveIntegration() {
 
   useEffect(() => {
     const handleMessage = (event) => {
+      if (EXPECTED_OPENER_ORIGIN && event.origin !== EXPECTED_OPENER_ORIGIN) {
+        return;
+      }
       if (!event?.data || event.data.source !== "google-drive-oauth") {
         return;
       }
@@ -92,6 +105,23 @@ function GoogleDriveIntegration() {
     return () => window.removeEventListener("message", handleMessage);
   }, [loadStatus]);
 
+  useEffect(() => {
+    return () => {
+      if (popupWatcherRef.current) {
+        window.clearInterval(popupWatcherRef.current);
+        popupWatcherRef.current = null;
+      }
+      if (popupRef.current && !popupRef.current.closed) {
+        try {
+          popupRef.current.close();
+        } catch {
+          /* noop */
+        }
+      }
+      popupRef.current = null;
+    };
+  }, []);
+
   const startOAuthPopup = async () => {
     setError(null);
     setFeedback(null);
@@ -116,9 +146,13 @@ function GoogleDriveIntegration() {
       }
       popupRef.current = popup;
 
-      const watchClose = window.setInterval(() => {
+      if (popupWatcherRef.current) {
+        window.clearInterval(popupWatcherRef.current);
+      }
+      popupWatcherRef.current = window.setInterval(() => {
         if (popupRef.current?.closed) {
-          window.clearInterval(watchClose);
+          window.clearInterval(popupWatcherRef.current);
+          popupWatcherRef.current = null;
           setIsConnecting(false);
         }
       }, 800);

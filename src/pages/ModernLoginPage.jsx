@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import authService from "../services/authService";
 import AuthSplitLayout from "../components/AuthSplitLayout";
 
 function ModernLoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, isLoggedIn, isLoading, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,11 +16,18 @@ function ModernLoginPage() {
   const [resendMessage, setResendMessage] = useState("");
   const [isResending, setIsResending] = useState(false);
 
+  const sessionExpired = searchParams.get("expired") === "1";
+  const redirectTarget = useMemo(() => {
+    const raw = searchParams.get("redirect");
+    if (!raw) return "/";
+    return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  }, [searchParams]);
+
   useEffect(() => {
     if (isLoggedIn) {
-      navigate("/");
+      navigate(redirectTarget, { replace: true });
     }
-  }, [isLoggedIn, navigate, user]);
+  }, [isLoggedIn, navigate, user, redirectTarget]);
 
   const handleResendVerification = async () => {
     if (!email) {
@@ -61,7 +69,7 @@ function ModernLoginPage() {
     try {
       const success = await login(email, password);
       if (success) {
-        navigate("/");
+        navigate(redirectTarget, { replace: true });
       }
     } catch (err) {
       const errorMessage =
@@ -131,6 +139,12 @@ function ModernLoginPage() {
             required
           />
         </div>
+
+        {sessionExpired && !error && (
+          <div className="status-warning">
+            Tu sesión expiró. Vuelve a iniciar sesión para continuar.
+          </div>
+        )}
 
         {error && <div className="status-error">{error}</div>}
 
