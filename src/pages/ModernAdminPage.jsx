@@ -4,11 +4,13 @@ import { useAuth } from "../contexts/AuthContext";
 import UserManagement from "../components/Admin/UserManagement";
 import GroupManagement from "../components/Admin/GroupManagement";
 import TagManagement from "../components/Admin/TagManagement";
+import GoogleDriveIntegration from "../components/Admin/GoogleDriveIntegration";
 
 const tabs = [
   { to: "/admin/users", label: "Usuarios", description: "Accesos, roles y grupos." },
   { to: "/admin/groups", label: "Grupos", description: "Organización y visibilidad." },
   { to: "/admin/tags", label: "Etiquetas", description: "Clasificación y búsqueda." },
+  { to: "/admin/integrations", label: "Integraciones", description: "Google Drive y servicios externos." },
 ];
 
 function ModernAdminPage() {
@@ -60,7 +62,7 @@ function ModernAdminPage() {
         </section>
 
         <section className="soft-panel rounded-[30px] p-4 sm:p-5">
-          <div className="grid gap-3 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {tabs.map((tab) => (
               <NavLink
                 key={tab.to}
@@ -93,6 +95,7 @@ function ModernAdminPage() {
             <Route path="users" element={<UserManagement />} />
             <Route path="groups" element={<GroupManagement />} />
             <Route path="tags" element={<TagManagement />} />
+            <Route path="integrations" element={<GoogleDriveIntegration />} />
           </Routes>
         </section>
       </div>
