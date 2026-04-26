@@ -35,7 +35,7 @@ const uploadFileToGoogle = (uploadUrl, file, onProgress) =>
             ? JSON.parse(xhr.responseText)
             : null;
           resolve(responseData);
-        } catch (_) {
+        } catch {
           reject(new Error("Google Drive devolvió una respuesta inválida."));
         }
         return;
@@ -53,7 +53,14 @@ const uploadFileToGoogle = (uploadUrl, file, onProgress) =>
     xhr.send(file);
   });
 
+// `payload` debe incluir `uploadToken` (devuelto por startDirectUploadSession).
+// El backend usa folder/assignedGroup desde el token firmado, no del body.
 const finalizeDirectUpload = async (payload) => {
+  if (!payload?.uploadToken) {
+    throw new Error(
+      "Falta uploadToken — debe pasarse el token devuelto por startDirectUploadSession."
+    );
+  }
   try {
     const response = await api.post("/google/drive/finalize", payload);
     return response.data;
