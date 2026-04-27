@@ -71,7 +71,7 @@ function UserManagement() {
             username: user.username,
             email: user.email,
             role: user.role,
-            groups: user.groups.map(group => group._id) // Cargar solo los IDs de grupo
+            groups: (user.groups || []).map(group => group._id) // Cargar solo los IDs de grupo
         });
         setFormError(null);
         setIsEditModalOpen(true);
@@ -188,7 +188,7 @@ function UserManagement() {
                                 <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">{user.email}</td>
                                 <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">{user.role}</td>
                                 <td className="whitespace-nowrap text-sm text-[var(--text-muted)]">
-                                    {user.groups.map(group => group.name).join(', ') || 'Ninguno'}
+                                    {(user.groups || []).map(group => group.name).join(', ') || 'Ninguno'}
                                 </td>
                                 <td className="whitespace-nowrap text-right text-sm font-medium">
                                      {/* Botones de Editar y Eliminar */}

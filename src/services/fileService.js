@@ -14,16 +14,6 @@ const listFiles = async (folderId, params = {}) => {
       }
     });
 
-    Object.keys(params).forEach((key) => {
-      if (
-        params[key] === undefined ||
-        params[key] === null ||
-        params[key] === ""
-      ) {
-        queryParams.delete(key);
-      }
-    });
-
     const response = await api.get(`/files?${queryParams.toString()}`);
     return response.data;
   } catch (error) {
